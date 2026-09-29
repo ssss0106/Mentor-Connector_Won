@@ -1,0 +1,57 @@
+"use client";
+
+import { useEffect } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import MentorCard from "@/components/MentorCard";
+import { recommendMentors } from "@/lib/match";
+import { useStore } from "@/lib/store";
+
+export default function RecommendPage() {
+  const router = useRouter();
+  const { ready, currentUser, myProfile, allMentors } = useStore();
+
+  useEffect(() => {
+    if (!ready) return;
+    if (!currentUser || currentUser.role !== "student") router.replace("/signup");
+    else if (!myProfile) router.replace("/concern");
+  }, [ready, currentUser, myProfile, router]);
+
+  if (!ready || !myProfile) return null;
+
+  const results = recommendMentors(myProfile, allMentors);
+
+  return (
+    <div className="container page">
+      <h1 className="page-title">당신에게 맞는 멘토를 찾았어요 🎉</h1>
+      <p className="page-sub">
+        {myProfile.grade} · {myProfile.interests.join(", ")}
+        {myProfile.desiredMajor && ` · ${myProfile.desiredMajor}`} · {myProfile.category} 고민
+        {" "}
+        <Link href="/concern" style={{ color: "var(--primary)", fontWeight: 600, marginLeft: 8 }}>
+          고민 수정
+        </Link>
+      </p>
+
+      {results.length === 0 ? (
+        <div className="card empty">
+          조건에 맞는 멘토를 찾지 못했어요.
+          <br />
+          <Link href="/mentors" className="btn btn-ghost" style={{ marginTop: 16 }}>
+            전체 멘토 둘러보기
+          </Link>
+        </div>
+      ) : (
+        <div className="grid">
+          {results.map((r) => (
+            <MentorCard key={r.mentor.id} mentor={r.mentor} score={r.score} reasons={r.reasons} />
+          ))}
+        </div>
+      )}
+
+      <p className="muted" style={{ marginTop: 24 }}>
+        추천 기준: 관심 분야 일치 +3 · 고민 유형 일치 +3 · 관심 전공 일치 +2 · 경험 분야 일치 +2 · 가능 시간 겹침 +1
+      </p>
+    </div>
+  );
+}
