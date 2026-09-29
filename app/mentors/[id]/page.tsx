@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import Avatar from "@/components/Avatar";
+import SlotGrid from "@/components/SlotGrid";
+import { summarizeSlots } from "@/lib/schedule";
 import { useStore } from "@/lib/store";
 
 export default function MentorDetailPage() {
@@ -49,6 +51,13 @@ export default function MentorDetailPage() {
 
           <h2>선배의 경험</h2>
           <p>{mentor.experience}</p>
+
+          {mentor.slots && mentor.slots.length > 0 && (
+            <>
+              <h2>주간 멘토링 가능 시간</h2>
+              <SlotGrid value={mentor.slots} />
+            </>
+          )}
         </div>
 
         <div className="card sticky">
@@ -56,7 +65,7 @@ export default function MentorDetailPage() {
             <li><span>대학교</span><span>{mentor.university}</span></li>
             <li><span>전공</span><span>{mentor.major}</span></li>
             <li><span>학년</span><span>{mentor.grade}</span></li>
-            <li><span>가능 시간</span><span>{mentor.availableTimes.join(", ") || "협의"}</span></li>
+            <li><span>가능 시간</span><span>{mentor.slots?.length ? summarizeSlots(mentor.slots) : mentor.availableTimes.join(", ") || "협의"}</span></li>
             <li><span>온라인 멘토링</span><span>{mentor.online ? "가능" : "불가"}</span></li>
           </ul>
           {isStudent ? (

@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import Avatar from "@/components/Avatar";
+import { formatSession } from "@/lib/schedule";
 import { setRequestStatus, useStore } from "@/lib/store";
 
 function formatTime(sec: number) {
@@ -101,7 +102,7 @@ export default function RoomPage() {
       <div className="room-top">
         <div>
           <strong>{mentor.name} 멘토 × {req.studentName} 학생</strong>
-          <span className="room-meta">{req.date} · {req.time}</span>
+          <span className="room-meta">{formatSession(req.date, req.time)}</span>
         </div>
         <div className="room-status">
           <span className={`dot ${joined ? "live" : ""}`} />

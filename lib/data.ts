@@ -1,3 +1,4 @@
+import { sampleSlots } from "./schedule";
 import type { ConcernCategory, Mentor, RequestStatus } from "./types";
 
 export const GRADES = ["중1", "중2", "중3", "고1", "고2", "고3"];
@@ -31,7 +32,7 @@ export const STATUS_LABEL: Record<RequestStatus, string> = {
 };
 
 // 시연용 가상 멘토 데이터 (실제 인물이 아님)
-export const SEED_MENTORS: Mentor[] = [
+const RAW_MENTORS: Mentor[] = [
   {
     id: "m1",
     name: "김지은",
@@ -145,3 +146,6 @@ export const SEED_MENTORS: Mentor[] = [
     online: false,
   },
 ];
+
+// 시드 멘토의 주간 시간표는 대략적인 시간대에서 예시로 만든다
+export const SEED_MENTORS: Mentor[] = RAW_MENTORS.map((m) => ({ ...m, slots: sampleSlots(m.availableTimes) }));

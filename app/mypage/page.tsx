@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import StatusBadge from "@/components/StatusBadge";
 import { STATUS_LABEL } from "@/lib/data";
+import { formatSession } from "@/lib/schedule";
 import { resetAll, setRequestStatus, useStore } from "@/lib/store";
 import type { Mentor, MentoringRequest, RequestStatus } from "@/lib/types";
 
@@ -40,7 +41,7 @@ function RequestItem({ req, mentor, asMentor }: { req: MentoringRequest; mentor?
           <strong>{asMentor ? `${req.studentName} 학생` : `${mentor?.name ?? "알 수 없음"} 멘토`}</strong>
           {!asMentor && mentor && <span className="muted"> · {mentor.university} {mentor.major}</span>}
           <div className="muted">
-            {req.date} · {req.time} · {req.method}
+            {formatSession(req.date, req.time)} · {req.method}
           </div>
         </div>
         <StatusBadge status={req.status} />

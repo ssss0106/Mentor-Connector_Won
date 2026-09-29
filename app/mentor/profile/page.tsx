@@ -3,7 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ChipSelect from "@/components/ChipSelect";
-import { ALL_TOPICS, INTERESTS, MENTOR_GRADES, SEED_MENTORS, TIMES } from "@/lib/data";
+import SlotGrid from "@/components/SlotGrid";
+import { ALL_TOPICS, INTERESTS, MENTOR_GRADES, SEED_MENTORS } from "@/lib/data";
+import { slotsToBands, summarizeSlots } from "@/lib/schedule";
 import { saveMentorProfile, useStore } from "@/lib/store";
 
 export default function MentorProfilePage() {
@@ -20,7 +22,7 @@ export default function MentorProfilePage() {
   const [topics, setTopics] = useState<string[]>([]);
   const [experience, setExperience] = useState("");
   const [intro, setIntro] = useState("");
-  const [times, setTimes] = useState<string[]>([]);
+  const [slots, setSlots] = useState<string[]>([]);
   const [online, setOnline] = useState(true);
 
   useEffect(() => {
@@ -39,14 +41,14 @@ export default function MentorProfilePage() {
     setTopics(m.topics);
     setExperience(m.experience);
     setIntro(m.intro);
-    setTimes(m.availableTimes);
+    setSlots(m.slots ?? []);
     setOnline(m.online);
     // existing은 매 렌더마다 새로 계산되므로 id 기준으로만 다시 불러온다
   }, [ready, currentUser?.id, existing?.id]);
 
   if (!ready || !currentUser) return null;
 
-  const valid = name.trim() && university.trim() && major.trim() && topics.length > 0 && intro.trim();
+  const valid = name.trim() && university.trim() && major.trim() && topics.length > 0 && intro.trim() && slots.length > 0;
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,7 +64,8 @@ export default function MentorProfilePage() {
         topics,
         experience: experience.trim(),
         intro: intro.trim(),
-        availableTimes: times,
+        availableTimes: slotsToBands(slots),
+        slots,
         online,
       },
       existing?.id,
@@ -125,8 +128,13 @@ export default function MentorProfilePage() {
         </div>
 
         <div className="field">
-          <label className="label">가능한 멘토링 시간</label>
-          <ChipSelect options={TIMES} value={times} onChange={setTimes} />
+          <label className="label">
+            가능한 멘토링 시간 <span className="hint">매주 반복돼요 · 칸을 눌러 가능한 시간(1시간 단위)을 모두 선택하세요</span>
+          </label>
+          <SlotGrid value={slots} onChange={isSeed ? undefined : setSlots} />
+          <p className="muted" style={{ margin: "8px 0 0" }}>
+            {slots.length ? `선택한 시간: ${summarizeSlots(slots)} (주 ${slots.length}시간)` : "아직 선택한 시간이 없어요."}
+          </p>
         </div>
 
         <div className="field">
