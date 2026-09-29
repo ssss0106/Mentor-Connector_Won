@@ -8,8 +8,9 @@ import { createRequest, useStore } from "@/lib/store";
 export default function ApplyPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { ready, currentUser, myProfile, allMentors } = useStore();
-  const mentor = allMentors.find((m) => m.id === id);
+  const { ready, currentUser, myProfile, visibleMentors } = useStore();
+  // 경력 조회 확인이 끝난 멘토에게만 신청할 수 있다
+  const mentor = visibleMentors.find((m) => m.id === id);
 
   const [date, setDate] = useState("");
   const [time, setTime] = useState(TIMES[0]);

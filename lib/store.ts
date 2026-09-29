@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from "react";
 import { SEED_MENTORS } from "./data";
-import type { Mentor, MentoringRequest, RequestStatus, StudentProfile, User } from "./types";
+import type { Mentor, MentoringRequest, RequestStatus, StudentProfile, User, Verification } from "./types";
 
 const KEY = "mentor-connector:v1";
 const EVENT = "mentor-connector:change";
@@ -24,7 +24,11 @@ function load(): DB {
   if (typeof window === "undefined") return empty;
   try {
     const raw = localStorage.getItem(KEY);
-    return raw ? { ...empty, ...JSON.parse(raw) } : empty;
+    if (!raw) return empty;
+    const db: DB = { ...empty, ...JSON.parse(raw) };
+    // 경력 조회 기능 이전에 저장된 멘토는 "서류 미제출" 상태로 본다
+    db.mentors = db.mentors.map((m) => ({ ...m, verification: m.verification ?? { status: "not_submitted" } }));
+    return db;
   } catch {
     return empty;
   }
@@ -51,6 +55,11 @@ export function getAllMentors(db: DB = load()): Mentor[] {
 
 export function getMentor(id: string, db: DB = load()): Mentor | undefined {
   return getAllMentors(db).find((m) => m.id === id);
+}
+
+// 경력 조회 확인이 끝난 멘토만 학생에게 보여 주고 추천한다
+export function getVisibleMentors(db: DB = load()): Mentor[] {
+  return getAllMentors(db).filter((m) => m.verification.status === "approved");
 }
 
 // ---------- 계정 ----------
@@ -100,17 +109,44 @@ export function saveStudentProfile(profile: StudentProfile) {
 
 // ---------- 멘토 프로필 ----------
 
-export function saveMentorProfile(userId: string, mentor: Omit<Mentor, "id">, existingId?: string) {
+export function saveMentorProfile(userId: string, mentor: Omit<Mentor, "id" | "verification">, existingId?: string) {
   update((db) => {
     const id = existingId ?? uid("m");
+    // 프로필을 수정해도 경력 조회 상태는 그대로 유지한다
+    const verification = db.mentors.find((m) => m.id === id)?.verification ?? { status: "not_submitted" };
     db.mentors = db.mentors.filter((m) => m.id !== id);
-    db.mentors.push({ ...mentor, id });
+    db.mentors.push({ ...mentor, id, verification });
     const user = db.users.find((u) => u.id === userId);
     if (user) {
       user.mentorId = id;
       user.name = mentor.name;
     }
   });
+}
+
+// ---------- 경력 조회 확인 ----------
+
+function setVerification(mentorId: string, fn: (v: Verification) => Verification) {
+  update((db) => {
+    const m = db.mentors.find((x) => x.id === mentorId);
+    if (m) m.verification = fn(m.verification);
+  });
+}
+
+// 멘토: 동의서 서명 + 조회 결과 파일 제출 (시연 버전은 파일 이름만 기록)
+export function submitVerification(mentorId: string, consentName: string, fileName: string) {
+  const now = new Date().toISOString();
+  setVerification(mentorId, () => ({ status: "pending", consentName, consentAt: now, fileName, submittedAt: now }));
+}
+
+// 운영자: 확인 완료 또는 반려
+export function reviewVerification(mentorId: string, approve: boolean, rejectReason?: string) {
+  setVerification(mentorId, (v) => ({
+    ...v,
+    status: approve ? "approved" : "rejected",
+    reviewedAt: new Date().toISOString(),
+    rejectReason: approve ? undefined : rejectReason,
+  }));
 }
 
 // ---------- 멘토링 신청 ----------
@@ -140,6 +176,7 @@ export interface StoreSnapshot extends DB {
   currentUser: User | null;
   myProfile: StudentProfile | null;
   allMentors: Mentor[];
+  visibleMentors: Mentor[]; // 경력 조회 완료 멘토
 }
 
 function snapshot(ready: boolean): StoreSnapshot {
@@ -151,6 +188,7 @@ function snapshot(ready: boolean): StoreSnapshot {
     currentUser,
     myProfile: currentUser ? db.profiles.find((p) => p.userId === currentUser.id) ?? null : null,
     allMentors: getAllMentors(db),
+    visibleMentors: getVisibleMentors(db),
   };
 }
 

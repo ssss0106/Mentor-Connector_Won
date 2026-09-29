@@ -1,4 +1,4 @@
-import type { ConcernCategory, Mentor, RequestStatus } from "./types";
+import type { ConcernCategory, Mentor, RequestStatus, Verification, VerificationStatus } from "./types";
 
 export const GRADES = ["중1", "중2", "중3", "고1", "고2", "고3"];
 export const MENTOR_GRADES = ["1학년", "2학년", "3학년", "4학년", "졸업생"];
@@ -30,6 +30,16 @@ export const STATUS_LABEL: Record<RequestStatus, string> = {
   completed: "완료",
 };
 
+export const VERIFICATION_LABEL: Record<VerificationStatus, string> = {
+  not_submitted: "서류 미제출",
+  pending: "확인 대기",
+  approved: "경력 조회 완료",
+  rejected: "반려",
+};
+
+// 시연용 가상 멘토는 경력 조회가 끝난 상태로 둔다
+const SEED_VERIFIED: Verification = { status: "approved", reviewedAt: "2026-09-28T09:00:00.000Z" };
+
 // 시연용 가상 멘토 데이터 (실제 인물이 아님)
 export const SEED_MENTORS: Mentor[] = [
   {
@@ -45,6 +55,7 @@ export const SEED_MENTORS: Mentor[] = [
     intro: "중학생 때 진로를 결정하기 어려웠던 경험을 바탕으로 편하게 이야기해드릴게요.",
     availableTimes: ["평일 저녁", "주말 오후"],
     online: true,
+    verification: SEED_VERIFIED,
   },
   {
     id: "m2",
@@ -59,6 +70,7 @@ export const SEED_MENTORS: Mentor[] = [
     intro: "심리학과가 실제로 뭘 배우는지, 솔직하게 알려드릴게요.",
     availableTimes: ["평일 저녁", "주말 오전"],
     online: true,
+    verification: SEED_VERIFIED,
   },
   {
     id: "m3",
@@ -73,6 +85,7 @@ export const SEED_MENTORS: Mentor[] = [
     intro: "공부가 막막할 때, 작은 습관부터 같이 만들어봐요.",
     availableTimes: ["평일 오후", "주말 오후"],
     online: true,
+    verification: SEED_VERIFIED,
   },
   {
     id: "m4",
@@ -87,6 +100,7 @@ export const SEED_MENTORS: Mentor[] = [
     intro: "개발자가 되고 싶다면, 지금 할 수 있는 것부터 알려줄게요.",
     availableTimes: ["평일 저녁", "주말 저녁"],
     online: true,
+    verification: SEED_VERIFIED,
   },
   {
     id: "m5",
@@ -101,6 +115,7 @@ export const SEED_MENTORS: Mentor[] = [
     intro: "대학생활을 알차게 보내는 법, 선배가 다 알려줄게요.",
     availableTimes: ["주말 오전", "주말 오후"],
     online: true,
+    verification: SEED_VERIFIED,
   },
   {
     id: "m6",
@@ -115,6 +130,7 @@ export const SEED_MENTORS: Mentor[] = [
     intro: "보건의료 계열 진로, 지역 대학 진학 이야기 궁금하면 물어보세요.",
     availableTimes: ["평일 오후", "평일 저녁"],
     online: true,
+    verification: SEED_VERIFIED,
   },
   {
     id: "m7",
@@ -129,6 +145,7 @@ export const SEED_MENTORS: Mentor[] = [
     intro: "영어 공부가 어렵다면, 제가 썼던 방법을 그대로 알려줄게요.",
     availableTimes: ["주말 오후", "주말 저녁"],
     online: true,
+    verification: SEED_VERIFIED,
   },
   {
     id: "m8",
@@ -143,5 +160,6 @@ export const SEED_MENTORS: Mentor[] = [
     intro: "공대가 궁금한 친구, 편하게 질문하세요!",
     availableTimes: ["평일 저녁", "주말 오전"],
     online: false,
+    verification: SEED_VERIFIED,
   },
 ];

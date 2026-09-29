@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Mentor } from "@/lib/types";
 import Avatar from "./Avatar";
+import VerificationBadge from "./VerificationBadge";
 
 interface Props {
   mentor: Mentor;
@@ -21,6 +22,11 @@ export default function MentorCard({ mentor, score, reasons }: Props) {
         </div>
         {score !== undefined && <div className="score">{score}점</div>}
       </div>
+      {mentor.verification.status === "approved" && (
+        <div>
+          <VerificationBadge status="approved" />
+        </div>
+      )}
       <p className="mentor-intro">“{mentor.intro}”</p>
       <div className="tags">
         {mentor.topics.map((t) => (

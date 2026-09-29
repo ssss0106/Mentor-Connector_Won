@@ -24,6 +24,19 @@ export interface StudentProfile {
   availableTimes: string[];
 }
 
+// 멘토 경력 조회 확인 상태: 미제출 → 확인 대기 → 확인 완료 / 반려
+export type VerificationStatus = "not_submitted" | "pending" | "approved" | "rejected";
+
+export interface Verification {
+  status: VerificationStatus;
+  consentName?: string; // 동의서 서명(이름)
+  consentAt?: string; // 동의 일시
+  fileName?: string; // 첨부한 조회 결과 파일 이름 (시연 버전: 파일 내용은 저장하지 않음)
+  submittedAt?: string;
+  reviewedAt?: string;
+  rejectReason?: string;
+}
+
 export interface Mentor {
   id: string;
   name: string;
@@ -36,6 +49,7 @@ export interface Mentor {
   intro: string; // 한 줄 소개
   availableTimes: string[];
   online: boolean;
+  verification: Verification;
 }
 
 export interface MentoringRequest {
