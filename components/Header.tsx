@@ -1,12 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { logout, useStore } from "@/lib/store";
 
 export default function Header() {
   const { currentUser } = useStore();
-  const router = useRouter();
 
   return (
     <header className="header">
@@ -24,7 +22,8 @@ export default function Header() {
                 className="link-btn"
                 onClick={() => {
                   logout();
-                  router.push("/");
+                  // 전체 새로고침으로 이동해, 로그인 필요 페이지의 /signup 리다이렉트와 겹치지 않게 한다
+                  window.location.href = "/";
                 }}
               >
                 로그아웃

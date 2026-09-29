@@ -47,11 +47,18 @@ function RequestItem({ req, mentor, asMentor }: { req: MentoringRequest; mentor?
       </div>
       <p className="req-msg">{req.message}</p>
       <StatusFlow status={req.status} />
-      {asMentor && action && (
+      {(req.status === "scheduled" || (asMentor && action)) && (
         <div className="req-actions">
-          <button className="btn btn-sm" onClick={() => setRequestStatus(req.id, action.next)}>
-            {action.label}
-          </button>
+          {req.status === "scheduled" && (
+            <Link href={`/room/${req.id}`} className="btn btn-sm btn-video">
+              🎥 화상 멘토링 입장
+            </Link>
+          )}
+          {asMentor && action && (
+            <button className={`btn btn-sm ${req.status === "scheduled" ? "btn-ghost" : ""}`} onClick={() => setRequestStatus(req.id, action.next)}>
+              {action.label}
+            </button>
+          )}
         </div>
       )}
     </div>

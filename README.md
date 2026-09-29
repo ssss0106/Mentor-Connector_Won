@@ -25,3 +25,4 @@ npm run dev   # http://localhost:3000
 | 멘토 상세 / 신청 | `/mentors/[id]`, `/mentors/[id]/apply` |
 | 마이페이지 (학생·멘토) | `/mypage` |
 | 멘토 프로필 등록 | `/mentor/profile` |
+| 화상 멘토링 (시연용, 실제 연결 없음) | `/room/[id]` |
