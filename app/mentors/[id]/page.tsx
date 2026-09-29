@@ -3,12 +3,16 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import Avatar from "@/components/Avatar";
+import VerificationBadge from "@/components/VerificationBadge";
 import { useStore } from "@/lib/store";
 
 export default function MentorDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { ready, allMentors, currentUser } = useStore();
-  const mentor = allMentors.find((m) => m.id === id);
+  const found = allMentors.find((m) => m.id === id);
+  // 경력 조회 확인 전인 멘토는 본인만 볼 수 있다
+  const isOwner = !!found && currentUser?.mentorId === found.id;
+  const mentor = found && (found.verification.status === "approved" || isOwner) ? found : undefined;
 
   if (!mentor) {
     if (!ready) return null;
@@ -31,6 +35,9 @@ export default function MentorDetailPage() {
               <h1 className="page-title" style={{ marginBottom: 4 }}>{mentor.name} 멘토</h1>
               <div className="muted">
                 {mentor.university} · {mentor.major} {mentor.grade}
+              </div>
+              <div style={{ marginTop: 8 }}>
+                <VerificationBadge status={mentor.verification.status} />
               </div>
             </div>
           </div>
@@ -59,7 +66,11 @@ export default function MentorDetailPage() {
             <li><span>가능 시간</span><span>{mentor.availableTimes.join(", ") || "협의"}</span></li>
             <li><span>온라인 멘토링</span><span>{mentor.online ? "가능" : "불가"}</span></li>
           </ul>
-          {isStudent ? (
+          {mentor.verification.status !== "approved" ? (
+            <p className="muted" style={{ margin: 0, textAlign: "center" }}>
+              경력 조회 확인이 끝나면 학생에게 공개돼요.
+            </p>
+          ) : isStudent ? (
             <Link href={`/mentors/${mentor.id}/apply`} className="btn btn-block">
               멘토링 신청하기
             </Link>

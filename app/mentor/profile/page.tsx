@@ -67,7 +67,9 @@ export default function MentorProfilePage() {
       },
       existing?.id,
     );
-    router.push("/mypage");
+    // 아직 경력 조회 서류를 내지 않았거나 반려됐다면 동의서 단계로 보낸다
+    const status = existing?.verification.status ?? "not_submitted";
+    router.push(status === "not_submitted" || status === "rejected" ? "/mentor/verify" : "/mypage");
   };
 
   return (
