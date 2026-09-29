@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import Avatar from "@/components/Avatar";
 import { useStore } from "@/lib/store";
 
 export default function MentorDetailPage() {
@@ -25,7 +26,7 @@ export default function MentorDetailPage() {
       <div className="detail">
         <div className="card">
           <div className="detail-profile">
-            <div className="avatar avatar-lg">{mentor.name.slice(0, 1)}</div>
+            <Avatar seed={mentor.id + mentor.name} size={88} />
             <div>
               <h1 className="page-title" style={{ marginBottom: 4 }}>{mentor.name} 멘토</h1>
               <div className="muted">

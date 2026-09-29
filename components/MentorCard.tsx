@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Mentor } from "@/lib/types";
+import Avatar from "./Avatar";
 
 interface Props {
   mentor: Mentor;
@@ -11,7 +12,7 @@ export default function MentorCard({ mentor, score, reasons }: Props) {
   return (
     <Link href={`/mentors/${mentor.id}`} className="card mentor-card">
       <div className="mentor-head">
-        <div className="avatar">{mentor.name.slice(0, 1)}</div>
+        <Avatar seed={mentor.id + mentor.name} />
         <div>
           <div className="mentor-name">{mentor.name} 멘토</div>
           <div className="muted">

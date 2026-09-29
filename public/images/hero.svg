@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 420" fill="none" font-family="Pretendard, 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif">
+  <!-- background -->
+  <circle cx="240" cy="230" r="170" fill="#e3e5ff"/>
+  <circle cx="400" cy="110" r="46" fill="#ffe6d5"/>
+  <circle cx="70" cy="330" r="30" fill="#ffe6d5"/>
+  <circle cx="92" cy="120" r="6" fill="#5b5bf0" opacity=".35"/>
+  <circle cx="430" cy="300" r="8" fill="#5b5bf0" opacity=".3"/>
+  <circle cx="370" cy="380" r="5" fill="#ff8a3d" opacity=".5"/>
+
+  <!-- connection -->
+  <path d="M175 285 C 215 245, 265 245, 305 285" stroke="#5b5bf0" stroke-width="3" stroke-dasharray="6 7" stroke-linecap="round"/>
+  <path d="M240 244c-6-9-20-6-20 5 0 9 12 15 20 22 8-7 20-13 20-22 0-11-14-14-20-5z" fill="#ff8a3d"/>
+
+  <!-- student -->
+  <rect x="88" y="300" width="120" height="120" rx="56" fill="#5b5bf0"/>
+  <rect x="112" y="302" width="12" height="70" rx="6" fill="#4343d6"/>
+  <rect x="172" y="302" width="12" height="70" rx="6" fill="#4343d6"/>
+  <rect x="138" y="270" width="20" height="36" rx="8" fill="#f6c9a4"/>
+  <circle cx="148" cy="240" r="42" fill="#ffd9b8"/>
+  <path d="M106 236c0-28 20-44 44-44s40 16 40 40c-12-2-30-8-40-20-8 12-26 22-44 24z" fill="#2d2a3e"/>
+  <circle cx="134" cy="248" r="4" fill="#2d2a3e"/>
+  <circle cx="162" cy="248" r="4" fill="#2d2a3e"/>
+  <path d="M140 264c5 4 11 4 16 0" stroke="#2d2a3e" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="124" cy="260" r="6" fill="#ffb3a0" opacity=".6"/>
+  <circle cx="172" cy="260" r="6" fill="#ffb3a0" opacity=".6"/>
+
+  <!-- mentor -->
+  <rect x="274" y="296" width="124" height="124" rx="58" fill="#ff8a3d"/>
+  <path d="M322 298l14 22 14-22z" fill="#fff"/>
+  <rect x="326" y="264" width="20" height="38" rx="8" fill="#f6c9a4"/>
+  <circle cx="336" cy="232" r="44" fill="#ffd9b8"/>
+  <path d="M292 232c0-26 18-44 44-44s44 18 44 44c-6-12-18-20-30-22-14 6-38 10-58 22z" fill="#5a3b2e"/>
+  <path d="M290 186l46-22 46 22-46 22z" fill="#2d2a3e"/>
+  <rect x="312" y="192" width="48" height="16" rx="4" fill="#2d2a3e"/>
+  <path d="M382 186v30" stroke="#ffc53d" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="382" cy="220" r="5" fill="#ffc53d"/>
+  <path d="M318 242c3-4 9-4 12 0M342 242c3-4 9-4 12 0" stroke="#2d2a3e" stroke-width="3" stroke-linecap="round"/>
+  <path d="M324 258c7 7 17 7 24 0" stroke="#2d2a3e" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="310" cy="254" r="6" fill="#ffb3a0" opacity=".6"/>
+  <circle cx="362" cy="254" r="6" fill="#ffb3a0" opacity=".6"/>
+
+  <!-- bubbles -->
+  <g>
+    <rect x="16" y="112" width="168" height="54" rx="18" fill="#fff" stroke="#dcdff0"/>
+    <path d="M120 164l10 16 6-16z" fill="#fff"/>
+    <text x="100" y="145" text-anchor="middle" font-size="15" font-weight="700" fill="#1d1f2c">전공 선택이 고민돼요 🤔</text>
+  </g>
+  <g>
+    <rect x="276" y="70" width="190" height="54" rx="18" fill="#5b5bf0"/>
+    <path d="M346 122l-6 18 18-18z" fill="#5b5bf0"/>
+    <text x="371" y="103" text-anchor="middle" font-size="15" font-weight="700" fill="#fff">나도 그랬어! 얘기해볼까?</text>
+  </g>
+
+  <!-- tags -->
+  <g font-size="13" font-weight="700">
+    <rect x="196" y="40" width="64" height="30" rx="15" fill="#fff" stroke="#dcdff0"/>
+    <text x="228" y="60" text-anchor="middle" fill="#5b5bf0">#진로</text>
+    <rect x="36" y="200" width="62" height="30" rx="15" fill="#fff" stroke="#dcdff0"/>
+    <text x="67" y="220" text-anchor="middle" fill="#ff8a3d">#학습</text>
+    <rect x="392" y="200" width="84" height="30" rx="15" fill="#fff" stroke="#dcdff0"/>
+    <text x="434" y="220" text-anchor="middle" fill="#5b5bf0">#대학생활</text>
+  </g>
+</svg>
