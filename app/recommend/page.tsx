@@ -9,7 +9,7 @@ import { useStore } from "@/lib/store";
 
 export default function RecommendPage() {
   const router = useRouter();
-  const { ready, currentUser, myProfile, allMentors } = useStore();
+  const { ready, currentUser, myProfile, visibleMentors } = useStore();
 
   useEffect(() => {
     if (!ready) return;
@@ -19,7 +19,7 @@ export default function RecommendPage() {
 
   if (!ready || !myProfile) return null;
 
-  const results = recommendMentors(myProfile, allMentors);
+  const results = recommendMentors(myProfile, visibleMentors);
 
   return (
     <div className="container page">

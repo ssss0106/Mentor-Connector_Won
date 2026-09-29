@@ -7,12 +7,12 @@ import { ALL_TOPICS, INTERESTS } from "@/lib/data";
 import { useStore } from "@/lib/store";
 
 export default function MentorsPage() {
-  const { allMentors } = useStore();
+  const { visibleMentors } = useStore();
   const [interests, setInterests] = useState<string[]>([]);
   const [topics, setTopics] = useState<string[]>([]);
   const [q, setQ] = useState("");
 
-  const filtered = allMentors.filter(
+  const filtered = visibleMentors.filter(
     (m) =>
       (interests.length === 0 || m.interests.some((i) => interests.includes(i))) &&
       (topics.length === 0 || m.topics.some((t) => topics.includes(t))) &&
@@ -22,7 +22,7 @@ export default function MentorsPage() {
   return (
     <div className="container page">
       <h1 className="page-title">멘토 둘러보기</h1>
-      <p className="page-sub">관심 분야와 고민 주제로 선배를 찾아보세요.</p>
+      <p className="page-sub">관심 분야와 고민 주제로 선배를 찾아보세요. 경력 조회 확인을 마친 멘토만 보여요.</p>
 
       <div className="filters">
         <input className="input" value={q} onChange={(e) => setQ(e.target.value)} placeholder="이름, 대학, 전공으로 검색" />

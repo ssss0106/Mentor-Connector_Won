@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import StatusBadge from "@/components/StatusBadge";
+import VerificationBadge from "@/components/VerificationBadge";
 import { STATUS_LABEL } from "@/lib/data";
 import { formatSession } from "@/lib/schedule";
 import { resetAll, setRequestStatus, useStore } from "@/lib/store";
@@ -106,6 +107,7 @@ export default function MyPage() {
       {isMentor ? (
         <div className="card" style={{ marginBottom: 24 }}>
           {myMentor ? (
+            <>
             <div className="req-top">
               <div>
                 <strong>내 멘토 프로필</strong>
@@ -118,6 +120,25 @@ export default function MyPage() {
                 <Link href="/mentor/profile" className="btn btn-sm">프로필 관리</Link>
               </div>
             </div>
+            <div className="verify-row">
+              <div>
+                <strong>경력 조회 확인</strong> <VerificationBadge status={myMentor.verification.status} />
+                <div className="muted">
+                  {{
+                    not_submitted: "동의서와 조회 결과 파일을 제출해야 학생에게 공개돼요.",
+                    pending: "운영자가 서류를 확인하고 있어요. 확인이 끝나면 학생에게 공개돼요.",
+                    approved: "확인이 끝나 학생에게 추천되고 있어요.",
+                    rejected: `반려됐어요. 사유: ${myMentor.verification.rejectReason || "사유 없음"}`,
+                  }[myMentor.verification.status]}
+                </div>
+              </div>
+              {(myMentor.verification.status === "not_submitted" || myMentor.verification.status === "rejected") && (
+                <Link href="/mentor/verify" className="btn btn-sm">
+                  {myMentor.verification.status === "rejected" ? "다시 제출" : "제출하기"}
+                </Link>
+              )}
+            </div>
+            </>
           ) : (
             <div className="req-top">
               <span>아직 멘토 프로필이 없어요. 프로필을 등록해야 학생에게 추천돼요.</span>

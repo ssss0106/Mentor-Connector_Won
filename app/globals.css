@@ -187,6 +187,36 @@ main { min-height: calc(100vh - 140px); }
 .badge-scheduled { background: var(--primary-soft); color: var(--primary); }
 .badge-completed { background: #e3f6e8; color: #1f7a3a; }
 
+/* ---------- 멘토 경력 조회 확인 ---------- */
+.verify-not_submitted { background: #f0f1f6; color: var(--muted); }
+.verify-pending { background: #fff3d6; color: #a36b00; }
+.verify-approved { background: #e3f6e8; color: #1f7a3a; }
+.verify-rejected { background: #fde2e2; color: #b42318; }
+.verify-status-card { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding: 16px 20px; }
+.verify-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--border); }
+.notice { margin-bottom: 20px; display: flex; flex-direction: column; gap: 6px; }
+.notice-warn { border-color: #f5c2c0; background: #fff6f5; }
+.consent h2 { font-size: 18px; margin: 0 0 4px; }
+.consent-note { color: var(--muted); font-size: 13px; margin: 0 0 12px; }
+.consent ol { margin: 0; padding-left: 20px; font-size: 14px; line-height: 1.8; }
+.check { display: flex; gap: 10px; align-items: flex-start; font-size: 15px; cursor: pointer; }
+.check input { margin-top: 4px; width: 18px; height: 18px; flex-shrink: 0; }
+.field-error { color: #b42318; font-size: 13px; margin-top: 6px; }
+.demo-warning { margin-top: 8px; font-size: 13px; background: #fff8f2; color: #a3541c; padding: 10px 12px; border-radius: 10px; }
+.btn.btn-danger { background: #d92d20; }
+.btn.btn-danger:hover { background: #b42318; }
+
+/* ---------- 운영자 페이지 ---------- */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
+.stat { display: flex; flex-direction: column; gap: 4px; padding: 16px 20px; }
+.stat span { color: var(--muted); font-size: 13px; }
+.stat strong { font-size: 26px; }
+.admin-info { margin: 0; }
+.admin-checklist { font-size: 13px; color: var(--muted); background: #f7f8fc; padding: 10px 12px; border-radius: 10px; }
+.reject-box { display: flex; flex-direction: column; gap: 8px; }
+.admin-table td:last-child { color: inherit; font-weight: 400; }
+.admin-table a { color: var(--primary); font-weight: 600; }
+
 .status-flow { display: flex; gap: 6px; align-items: center; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
 .status-flow .done { color: var(--primary); font-weight: 700; }
 
@@ -271,6 +301,8 @@ main { min-height: calc(100vh - 140px); }
   .hero-preview { justify-self: center; }
   .review-note { display: block; margin: 4px 0 0; }
   .features, .detail, .row, .role-cards { grid-template-columns: 1fr; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .admin-table { display: block; overflow-x: auto; }
   .nav { gap: 12px; font-size: 13px; }
   .nav a:first-child { display: none; }
   .sticky { position: static; }
