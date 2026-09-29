@@ -25,6 +25,13 @@ const REVIEWS = [
   },
 ];
 
+// 첫 화면 미리보기에 보여줄 추천 결과 예시
+const HERO_MENTORS = [
+  { ...SEED_MENTORS[1], score: 11 },
+  { ...SEED_MENTORS[0], score: 9 },
+  { ...SEED_MENTORS[2], score: 6 },
+];
+
 export default function Home() {
   const { currentUser, myProfile } = useStore();
 
@@ -54,7 +61,26 @@ export default function Home() {
             </Link>
           </div>
           </div>
-          <img src="/images/hero.svg" alt="고민을 이야기하는 학생과 대학생 멘토 일러스트" className="hero-img" />
+          <div className="hero-preview" aria-hidden="true">
+            <div className="preview-concern">
+              <Avatar seed="hero-student" size={44} />
+              <div>
+                <div className="preview-label">고1 · 강원 · 진로 고민</div>
+                <div className="preview-text">심리학과에 가고 싶은데, 실제로 뭘 배우는지 궁금해요</div>
+              </div>
+            </div>
+            <div className="preview-arrow">추천 멘토 3명을 찾았어요 ↓</div>
+            {HERO_MENTORS.map((m) => (
+              <div key={m.id} className="preview-mentor">
+                <Avatar seed={m.id + m.name} size={48} />
+                <div className="preview-mentor-info">
+                  <strong>{m.name} 멘토</strong>
+                  <span className="muted">{m.university} · {m.major}</span>
+                </div>
+                <span className="score">{m.score}점</span>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

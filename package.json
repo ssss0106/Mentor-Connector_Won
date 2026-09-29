@@ -9,6 +9,8 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@dicebear/core": "^9.4.3",
+    "@dicebear/notionists": "^9.4.2",
     "next": "^15.5.26",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
