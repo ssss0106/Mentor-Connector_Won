@@ -121,7 +121,9 @@ export default function ConcernPage() {
         </div>
 
         <div className="field">
-          <label className="label" htmlFor="concern">주요 고민</label>
+          <label className="label" htmlFor="concern">
+            주요 고민 <span className="hint">이름·연락처·학교 이름은 적지 마세요</span>
+          </label>
           <textarea
             id="concern"
             className="textarea"

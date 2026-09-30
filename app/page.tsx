@@ -27,7 +27,7 @@ const REVIEWS = [
 
 // 첫 화면 미리보기에 보여줄 추천 결과 예시
 const HERO_MENTORS = [
-  { ...SEED_MENTORS[1], score: 11 },
+  { ...SEED_MENTORS[1], score: 13 },
   { ...SEED_MENTORS[0], score: 9 },
   { ...SEED_MENTORS[2], score: 6 },
 ];
@@ -50,7 +50,7 @@ export default function Home() {
             대학생 선배를 만나보세요
           </h1>
           <p>
-            과목이 아니라 고민으로 연결해요. 진로·학습·대학생활 고민을 적으면 꼭 맞는 선배를 추천해 드릴게요.
+            과목이 아니라 고민으로 연결해요. 물어볼 곳이 없던 진로·학습·대학생활 고민도, 같은 지역에서 자란 선배에게 온라인으로 물어보세요.
           </p>
           <div className="hero-actions">
             <Link href={findHref} className="btn">
@@ -151,6 +151,7 @@ export default function Home() {
             <tr><td>선생님 탐색</td><td>나에게 맞는 선배 추천</td></tr>
             <tr><td>수업·성적 향상</td><td>진로·학습·대학생활 경험 공유</td></tr>
             <tr><td>전문 강사·과외 중심</td><td>대학생 선배 중심</td></tr>
+            <tr><td>수도권 학원가 중심</td><td>지역 어디서든 온라인으로, 같은 지역 출신 선배까지</td></tr>
             <tr><td>가격·수업 조건 비교</td><td>경험·전공·관심 분야 기반 선택</td></tr>
           </tbody>
         </table>

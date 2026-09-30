@@ -47,6 +47,7 @@ export interface Mentor {
   topics: string[]; // 멘토링 가능 분야
   experience: string; // 본인의 경험
   intro: string; // 한 줄 소개
+  hometown?: string; // 출신 지역 (같은 지역 학생과의 매칭에 사용)
   availableTimes: string[]; // 대략적인 시간대 (매칭 점수용, slots에서 계산)
   slots?: string[]; // 주간 가능 시간표 ("요일-시", lib/schedule.ts 참고)
   online: boolean;

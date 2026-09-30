@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ChipSelect from "@/components/ChipSelect";
 import SlotGrid from "@/components/SlotGrid";
-import { ALL_TOPICS, INTERESTS, MENTOR_GRADES, SEED_MENTORS } from "@/lib/data";
+import { ALL_TOPICS, HOMETOWNS, INTERESTS, MENTOR_GRADES, SEED_MENTORS } from "@/lib/data";
 import { slotsToBands, summarizeSlots } from "@/lib/schedule";
 import { saveMentorProfile, useStore } from "@/lib/store";
 
@@ -22,6 +22,7 @@ export default function MentorProfilePage() {
   const [topics, setTopics] = useState<string[]>([]);
   const [experience, setExperience] = useState("");
   const [intro, setIntro] = useState("");
+  const [hometown, setHometown] = useState("");
   const [slots, setSlots] = useState<string[]>([]);
   const [online, setOnline] = useState(true);
 
@@ -41,6 +42,7 @@ export default function MentorProfilePage() {
     setTopics(m.topics);
     setExperience(m.experience);
     setIntro(m.intro);
+    setHometown(m.hometown ?? "");
     setSlots(m.slots ?? []);
     setOnline(m.online);
     // existing은 매 렌더마다 새로 계산되므로 id 기준으로만 다시 불러온다
@@ -48,7 +50,7 @@ export default function MentorProfilePage() {
 
   if (!ready || !currentUser) return null;
 
-  const valid = name.trim() && university.trim() && major.trim() && topics.length > 0 && intro.trim() && slots.length > 0;
+  const valid = name.trim() && university.trim() && major.trim() && topics.length > 0 && intro.trim() && hometown && slots.length > 0;
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,6 +66,7 @@ export default function MentorProfilePage() {
         topics,
         experience: experience.trim(),
         intro: intro.trim(),
+        hometown,
         availableTimes: slotsToBands(slots),
         slots,
         online,
@@ -117,6 +120,16 @@ export default function MentorProfilePage() {
         <div className="field">
           <label className="label">멘토링 가능 분야</label>
           <ChipSelect options={ALL_TOPICS} value={topics} onChange={setTopics} />
+        </div>
+
+        <div className="field">
+          <label className="label" htmlFor="hometown">
+            출신 지역 <span className="hint">고등학교를 다닌 지역 · 같은 지역 후배에게 먼저 추천돼요</span>
+          </label>
+          <select id="hometown" className="select" value={hometown} onChange={(e) => setHometown(e.target.value)}>
+            <option value="">선택해 주세요</option>
+            {HOMETOWNS.map((h) => <option key={h}>{h}</option>)}
+          </select>
         </div>
 
         <div className="field">

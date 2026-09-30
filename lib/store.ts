@@ -203,6 +203,9 @@ export function saveSummary(id: string, summary: LectureSummary) {
 
 export function resetAll() {
   localStorage.removeItem(KEY);
+  Object.keys(localStorage)
+    .filter((k) => k.startsWith("mentor-connector:reasons:"))
+    .forEach((k) => localStorage.removeItem(k));
   window.dispatchEvent(new Event(EVENT));
 }
 

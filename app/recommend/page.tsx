@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import MentorCard from "@/components/MentorCard";
+import { useAiReasons } from "@/lib/ai-reasons";
 import { recommendMentors } from "@/lib/match";
 import { useStore } from "@/lib/store";
 
@@ -17,9 +18,13 @@ export default function RecommendPage() {
     else if (!myProfile) router.replace("/concern");
   }, [ready, currentUser, myProfile, router]);
 
-  if (!ready || !myProfile) return null;
+  const results = useMemo(
+    () => (myProfile ? recommendMentors(myProfile, visibleMentors) : []),
+    [myProfile, visibleMentors],
+  );
+  const ai = useAiReasons(myProfile, results.map((r) => r.mentor));
 
-  const results = recommendMentors(myProfile, visibleMentors);
+  if (!ready || !myProfile) return null;
 
   return (
     <div className="container page">
@@ -44,13 +49,22 @@ export default function RecommendPage() {
       ) : (
         <div className="grid">
           {results.map((r) => (
-            <MentorCard key={r.mentor.id} mentor={r.mentor} score={r.score} reasons={r.reasons} />
+            <MentorCard
+              key={r.mentor.id}
+              mentor={r.mentor}
+              score={r.score}
+              reasons={r.reasons}
+              story={{ concern: myProfile.concern, ai: ai.reasons[r.mentor.id], aiLoading: ai.status === "loading" }}
+            />
           ))}
         </div>
       )}
 
       <p className="muted" style={{ marginTop: 24 }}>
-        추천 기준: 관심 분야 일치 +3 · 고민 유형 일치 +3 · 관심 전공 일치 +2 · 경험 분야 일치 +2 · 가능 시간 겹침 +1
+        🤖 “왜 이 선배인지” 설명은 AI가 내 고민과 멘토 소개를 읽고 써요. 이때 고민 내용은 OpenAI 서버로 전송되고, 이름과 연락처는 보내지 않아요.
+      </p>
+      <p className="muted" style={{ marginTop: 8 }}>
+        추천 기준: 관심 분야 일치 +3 · 고민 유형 일치 +3 · 관심 전공 일치 +2 · 경험 분야 일치 +2 · 같은 지역 출신 +2 · 가능 시간 겹침 +1
       </p>
     </div>
   );

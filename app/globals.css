@@ -256,6 +256,16 @@ main { min-height: calc(100vh - 140px); }
 .time-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
 .time-chip { font-size: 15px; font-weight: 600; }
 
+/* ---------- region + match story ---------- */
+.badge-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.tag-region { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; background: #eefaf3; color: #1a7f4b; font-size: 12px; font-weight: 600; }
+.match-story { background: #f6f7ff; border-radius: 10px; padding: 12px 14px; font-size: 13px; line-height: 1.55; display: flex; flex-direction: column; gap: 8px; }
+.story-row { display: flex; gap: 8px; align-items: flex-start; }
+.story-label { flex-shrink: 0; padding: 1px 8px; border-radius: 6px; background: #e3e6ff; color: var(--primary); font-weight: 700; font-size: 12px; }
+.story-label-mentor { background: #e3f5ea; color: #1a7f4b; }
+.story-ai { border-top: 1px dashed #cfd3f5; padding-top: 8px; color: #2b2f5e; font-weight: 500; }
+.story-ai-loading { color: var(--muted); font-weight: 400; }
+
 /* ---------- AI lecture summary ---------- */
 .summary { font-size: 14px; line-height: 1.6; }
 .summary-overview { margin: 0 0 8px; font-weight: 600; }
