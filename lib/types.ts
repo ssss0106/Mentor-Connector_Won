@@ -65,3 +65,13 @@ export interface MentoringRequest {
   status: RequestStatus;
   createdAt: string;
 }
+
+// 멘토링 신청 1건마다 멘토·학생 1:1 채팅방이 하나 생긴다
+export interface ChatMessage {
+  id: string;
+  requestId: string;
+  senderId: string; // 보낸 사람의 User id
+  senderName: string;
+  text: string;
+  createdAt: string;
+}

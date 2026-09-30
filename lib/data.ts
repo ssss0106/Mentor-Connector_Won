@@ -22,7 +22,7 @@ export const ALL_TOPICS = Object.values(CONCERN_TOPICS).flat();
 
 export const TIMES = ["평일 오후", "평일 저녁", "주말 오전", "주말 오후", "주말 저녁"];
 
-export const METHODS = ["온라인 화상", "온라인 채팅", "전화"];
+export const METHODS = ["온라인 화상", "온라인 채팅"];
 
 export const STATUS_LABEL: Record<RequestStatus, string> = {
   pending: "신청 대기",
