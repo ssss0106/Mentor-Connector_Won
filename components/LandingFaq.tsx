@@ -4,7 +4,7 @@ import { useState } from "react";
 import { SESSION_PRICE, formatPrice } from "@/lib/data";
 import { SESSION_MINUTES } from "@/lib/schedule";
 
-// 랜딩 페이지 맨 아래 자주 묻는 질문 (시연용으로 작성한 내용)
+// 랜딩 페이지 맨 아래 자주 묻는 질문
 const FAQS: { q: string; a: string }[] = [
   {
     q: "누가 이용할 수 있나요?",
@@ -32,7 +32,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "비용은 얼마인가요?",
-    a: `모든 멘토가 ${SESSION_MINUTES}분 1회 ${formatPrice(SESSION_PRICE)}으로 같아요. 지금은 시연 버전이라 실제로 결제되지는 않아요.`,
+    a: `모든 멘토가 ${SESSION_MINUTES}분 1회 ${formatPrice(SESSION_PRICE)}으로 같아요. 멘토에 따라 가격이 달라지지 않아요.`,
   },
   {
     q: "같은 멘토와 다시 멘토링할 수 있나요?",
@@ -40,7 +40,7 @@ const FAQS: { q: string; a: string }[] = [
   },
   {
     q: "일정을 바꾸거나 취소하고 싶어요.",
-    a: "채팅방에서 멘토와 상의해 주세요. 시연 버전은 결제가 없어 환불 절차도 없고, 정식 운영 때 취소·환불 기준을 따로 안내할 예정이에요.",
+    a: "일정 변경은 채팅방에서 멘토와 상의해 주세요. 멘토링 시작 24시간 전까지 취소하면 이용료를 전액 돌려드려요.",
   },
   {
     q: "멘토와 개인 연락처를 주고받아도 되나요?",
