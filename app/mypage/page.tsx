@@ -1,5 +1,6 @@
 "use client";
 
+import SummaryView from "@/components/SummaryView";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -49,6 +50,12 @@ function RequestItem({ req, mentor, asMentor, unread }: { req: MentoringRequest;
       </div>
       <p className="req-msg">{req.message}</p>
       <StatusFlow status={req.status} />
+      {req.summary && (
+        <details className="summary-details">
+          <summary>📝 AI 수업 요약 보기</summary>
+          <SummaryView summary={req.summary} />
+        </details>
+      )}
       {(canChat(req) || (asMentor && action)) && (
         <div className="req-actions">
           {canChat(req) && (

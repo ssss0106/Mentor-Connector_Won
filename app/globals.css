@@ -256,6 +256,25 @@ main { min-height: calc(100vh - 140px); }
 .time-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
 .time-chip { font-size: 15px; font-weight: 600; }
 
+/* ---------- AI lecture summary ---------- */
+.summary { font-size: 14px; line-height: 1.6; }
+.summary-overview { margin: 0 0 8px; font-weight: 600; }
+.summary h4 { margin: 12px 0 4px; font-size: 13px; opacity: 0.75; }
+.summary ul { margin: 0; padding-left: 18px; }
+.summary li { margin-bottom: 2px; }
+.summary-note { margin-top: 10px; font-size: 12px; opacity: 0.6; }
+.side-box .summary { padding-bottom: 12px; border-bottom: 1px solid #3a3d4c; }
+.summary-details { margin: 12px 0 0; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; background: #fafbff; }
+.summary-details > summary { cursor: pointer; font-weight: 600; font-size: 14px; }
+.summary-details .summary { margin-top: 10px; }
+.rec-help { margin: 8px 0; font-size: 13px; opacity: 0.8; }
+.rec-consent { align-items: flex-start; font-size: 12px; margin-bottom: 10px; opacity: 0.9; }
+.rec-btn { width: 100%; }
+.rec-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.rec-live { display: flex; align-items: center; gap: 10px; margin: 8px 0 12px; font-weight: 600; }
+.rec-dot { width: 10px; height: 10px; border-radius: 50%; background: #ef4444; animation: rec-blink 1s infinite; }
+@keyframes rec-blink { 50% { opacity: 0.25; } }
+
 /* ---------- video room (demo) ---------- */
 .btn-video { background: #16a34a; }
 .btn-video:hover { background: #12833c; }

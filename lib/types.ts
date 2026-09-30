@@ -53,6 +53,15 @@ export interface Mentor {
   verification: Verification;
 }
 
+// AI가 수업 녹음을 듣고 만든 요약 (음성과 원문은 저장하지 않는다)
+export interface LectureSummary {
+  overview: string;
+  keyPoints: string[];
+  actionItems: string[];
+  nextQuestions: string[];
+  createdAt: string;
+}
+
 export interface MentoringRequest {
   id: string;
   studentId: string;
@@ -64,6 +73,7 @@ export interface MentoringRequest {
   method: string;
   status: RequestStatus;
   createdAt: string;
+  summary?: LectureSummary;
 }
 
 // 멘토링 신청 1건마다 멘토·학생 1:1 채팅방이 하나 생긴다

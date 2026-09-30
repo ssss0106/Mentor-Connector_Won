@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from "react";
 import { SEED_MENTORS } from "./data";
-import type { ChatMessage, Mentor, MentoringRequest, RequestStatus, StudentProfile, User, Verification } from "./types";
+import type { ChatMessage, Mentor, MentoringRequest, RequestStatus, StudentProfile, User, Verification, LectureSummary } from "./types";
 
 const KEY = "mentor-connector:v1";
 const EVENT = "mentor-connector:change";
@@ -191,6 +191,13 @@ export function setRequestStatus(id: string, status: RequestStatus) {
   update((db) => {
     const r = db.requests.find((x) => x.id === id);
     if (r) r.status = status;
+  });
+}
+
+export function saveSummary(id: string, summary: LectureSummary) {
+  update((db) => {
+    const r = db.requests.find((x) => x.id === id);
+    if (r) r.summary = summary;
   });
 }
 

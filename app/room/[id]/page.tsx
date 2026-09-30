@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import Avatar from "@/components/Avatar";
+import LectureRecorder from "@/components/LectureRecorder";
 import { formatSession } from "@/lib/schedule";
 import { setRequestStatus, useStore } from "@/lib/store";
 
@@ -163,6 +164,7 @@ export default function RoomPage() {
               placeholder={isMentor ? "학생에게 추천한 내용, 다음 목표 등을 적어두세요." : "선배의 조언, 다음에 해볼 것들을 적어두세요."}
             />
           </div>
+          <LectureRecorder requestId={req.id} summary={req.summary} />
           <p className="demo-note">
             시연용 화상회의 화면이에요. 실제로 상대방과 연결되지 않으며, 카메라 영상은 이 기기 밖으로 전송되지 않아요.
           </p>
