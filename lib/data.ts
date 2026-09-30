@@ -29,7 +29,7 @@ export const ALL_TOPICS = Object.values(CONCERN_TOPICS).flat();
 export const TIMES = ["평일 오후", "평일 저녁", "주말 오전", "주말 오후", "주말 저녁"];
 
 // 멘토링 비용: 모든 멘토 동일, 30분 1회 고정 (시연 화면이라 실제 결제는 하지 않는다)
-export const SESSION_PRICE = 7000;
+export const SESSION_PRICE = 9900;
 export const formatPrice = (n: number) => `${n.toLocaleString("ko-KR")}원`;
 
 // 입시 전형 (멘토는 본인이 거친 전형, 학생은 준비하는 전형)
