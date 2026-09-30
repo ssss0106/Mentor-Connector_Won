@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { logout, useStore } from "@/lib/store";
 import ChatMenu from "./ChatMenu";
+import Logo from "./Logo";
 
 export default function Header() {
   const { currentUser } = useStore();
@@ -10,8 +11,8 @@ export default function Header() {
   return (
     <header className="header">
       <div className="container header-inner">
-        <Link href="/" className="logo">
-          Mentor<span>connector</span>
+        <Link href="/" className="logo" aria-label="Menco 홈">
+          <Logo />
         </Link>
         <nav className="nav">
           <Link href="/mentors">멘토 둘러보기</Link>

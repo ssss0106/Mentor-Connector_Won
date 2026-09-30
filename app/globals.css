@@ -33,8 +33,17 @@ main { min-height: calc(100vh - 140px); }
 /* ---------- header / footer ---------- */
 .header { background: #fff; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 10; }
 .header-inner { display: flex; align-items: center; justify-content: space-between; height: 64px; }
-.logo { font-weight: 800; font-size: 20px; color: var(--primary); }
-.logo span { color: var(--text); margin-left: 4px; font-weight: 600; }
+.logo { display: flex; align-items: center; }
+/* Menco 로고 */
+.brand { display: inline-flex; align-items: center; gap: 8px; }
+.brand-mark { flex-shrink: 0; display: block; }
+.brand-text { display: inline-flex; align-items: baseline; gap: 8px; }
+.brand-name {
+  font-size: 25px; font-weight: 900; letter-spacing: -0.045em; line-height: 1;
+  background: linear-gradient(120deg, #4b4be6 0%, #7a5cf0 55%, #ff8a3d 110%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.brand-sub { font-size: 12px; font-weight: 600; color: #a3a7b8; letter-spacing: 0.02em; white-space: nowrap; }
 .nav { display: flex; align-items: center; gap: 18px; font-size: 15px; }
 .nav a:hover, .link-btn:hover { color: var(--primary); }
 .link-btn { background: none; border: none; font: inherit; color: var(--muted); cursor: pointer; padding: 0; }
@@ -515,7 +524,10 @@ main { min-height: calc(100vh - 140px); }
   .admin-table { display: block; overflow-x: auto; }
   .nav { gap: 12px; font-size: 13px; }
   .nav > a:first-child { display: none; }
-  .logo { font-size: 17px; }
+  .brand-text { flex-direction: column; align-items: flex-start; gap: 1px; }
+  .brand-name { font-size: 21px; }
+  .brand-sub { font-size: 10px; }
+  .brand-mark { width: 26px; height: 26px; }
   .nav { gap: 10px; }
   .nav a, .nav .link-btn { white-space: nowrap; }
   .chat-icon-btn { width: 32px; height: 32px; }
@@ -525,7 +537,9 @@ main { min-height: calc(100vh - 140px); }
 }
 
 @media (max-width: 400px) {
-  .logo { font-size: 15px; }
+  .brand-name { font-size: 19px; }
+  .brand-mark { width: 24px; height: 24px; }
+  .brand { gap: 6px; }
   .nav { gap: 6px; font-size: 12.5px; }
   .chat-icon-btn { width: 30px; height: 30px; }
 }
