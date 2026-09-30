@@ -23,6 +23,12 @@ export default function MentorProfilePage() {
   const [experience, setExperience] = useState("");
   const [intro, setIntro] = useState("");
   const [hometown, setHometown] = useState("");
+  const [satisfaction, setSatisfaction] = useState("");
+  const [unknownBefore, setUnknownBefore] = useState("");
+  const [hardPart, setHardPart] = useState("");
+  const [fitFor, setFitFor] = useState("");
+  const [switched, setSwitched] = useState(false);
+  const [switchReason, setSwitchReason] = useState("");
   const [slots, setSlots] = useState<string[]>([]);
   const [online, setOnline] = useState(true);
 
@@ -43,6 +49,12 @@ export default function MentorProfilePage() {
     setExperience(m.experience);
     setIntro(m.intro);
     setHometown(m.hometown ?? "");
+    setSatisfaction(m.insight ? String(m.insight.satisfaction) : "");
+    setUnknownBefore(m.insight?.unknownBefore ?? "");
+    setHardPart(m.insight?.hardPart ?? "");
+    setFitFor(m.insight?.fitFor ?? "");
+    setSwitched(!!m.insight?.switched);
+    setSwitchReason(m.insight?.switched?.reason ?? "");
     setSlots(m.slots ?? []);
     setOnline(m.online);
     // existing은 매 렌더마다 새로 계산되므로 id 기준으로만 다시 불러온다
@@ -50,7 +62,8 @@ export default function MentorProfilePage() {
 
   if (!ready || !currentUser) return null;
 
-  const valid = name.trim() && university.trim() && major.trim() && topics.length > 0 && intro.trim() && hometown && slots.length > 0;
+  const valid = name.trim() && university.trim() && major.trim() && topics.length > 0 && intro.trim() && hometown && slots.length > 0 &&
+    satisfaction && unknownBefore.trim() && hardPart.trim() && (!switched || switchReason.trim());
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,6 +80,13 @@ export default function MentorProfilePage() {
         experience: experience.trim(),
         intro: intro.trim(),
         hometown,
+        insight: {
+          satisfaction: Number(satisfaction),
+          unknownBefore: unknownBefore.trim(),
+          hardPart: hardPart.trim(),
+          ...(fitFor.trim() ? { fitFor: fitFor.trim() } : {}),
+          ...(switched ? { switched: { reason: switchReason.trim() } } : {}),
+        },
         availableTimes: slotsToBands(slots),
         slots,
         online,
@@ -140,6 +160,44 @@ export default function MentorProfilePage() {
         <div className="field">
           <label className="label" htmlFor="exp">나의 경험</label>
           <textarea id="exp" className="textarea" value={experience} onChange={(e) => setExperience(e.target.value)} placeholder="중·고등학생 때의 고민, 전공을 선택한 계기, 공부 방법 등 후배에게 나눌 수 있는 경험을 적어주세요." />
+        </div>
+
+        <div className="field insight-form">
+          <label className="label">
+            전공·대학생활, 실제로는 이랬어요 <span className="hint">진학을 고민하는 후배에게 가장 도움이 되는 정보예요</span>
+          </label>
+          <div className="row">
+            <div className="field">
+              <label className="label" htmlFor="sat">지금 전공 만족도</label>
+              <select id="sat" className="select" value={satisfaction} onChange={(e) => setSatisfaction(e.target.value)}>
+                <option value="">선택해 주세요</option>
+                <option value="5">5 · 매우 만족해요</option>
+                <option value="4">4 · 만족해요</option>
+                <option value="3">3 · 보통이에요</option>
+                <option value="2">2 · 아쉬운 점이 많아요</option>
+                <option value="1">1 · 많이 후회돼요</option>
+              </select>
+            </div>
+          </div>
+          <div className="field">
+            <label className="label" htmlFor="unk">입학 전에는 몰랐던 점</label>
+            <input id="unk" className="input" value={unknownBefore} onChange={(e) => setUnknownBefore(e.target.value)} maxLength={150} placeholder="예: 수학·통계 과목이 생각보다 많았어요" />
+          </div>
+          <div className="field">
+            <label className="label" htmlFor="hard">적응하면서 힘들었던 점</label>
+            <input id="hard" className="input" value={hardPart} onChange={(e) => setHardPart(e.target.value)} maxLength={150} placeholder="예: 첫 학기에 전공 수업 수준 차이에 적응하기 어려웠어요" />
+          </div>
+          <div className="field">
+            <label className="label" htmlFor="fit">이런 학생에게 잘 맞아요 <span className="hint">선택</span></label>
+            <input id="fit" className="input" value={fitFor} onChange={(e) => setFitFor(e.target.value)} maxLength={150} placeholder="예: 사람의 마음이 궁금하고 숫자도 괜찮은 학생" />
+          </div>
+          <label className="check">
+            <input type="checkbox" checked={switched} onChange={(e) => setSwitched(e.target.checked)} />
+            <span>전공을 바꾼 경험이 있어요 <span className="hint">학과 옮김·복수전공·전공 재선택 모두 포함해요 (학업 경험을 묻는 항목이에요)</span></span>
+          </label>
+          {switched && (
+            <input className="input" style={{ marginTop: 8 }} value={switchReason} onChange={(e) => setSwitchReason(e.target.value)} maxLength={200} placeholder="바꾼 이유와 지금의 생각을 적어주세요" aria-label="전공을 바꾼 이유" />
+          )}
         </div>
 
         <div className="field">

@@ -256,6 +256,20 @@ main { min-height: calc(100vh - 140px); }
 .time-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
 .time-chip { font-size: 15px; font-weight: 600; }
 
+/* ---------- major insight ---------- */
+.insight { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+.insight-row { display: grid; grid-template-columns: 170px 1fr; gap: 12px; padding: 12px 14px; font-size: 14px; line-height: 1.55; }
+.insight-row + .insight-row { border-top: 1px solid var(--border); }
+.insight-label { font-weight: 700; color: var(--muted); }
+.insight-switch { background: #f2f6ff; }
+.stars-sm { color: #f5a524; letter-spacing: 1px; }
+.tag-switch { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; background: #eaf0ff; color: #3554d1; font-size: 12px; font-weight: 600; }
+.card-insight { margin: 0; font-size: 13px; line-height: 1.5; color: #4a4d63; }
+.card-insight strong { color: var(--text); }
+.insight-form { background: #f9faff; border: 1px solid var(--border); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.insight-form .hint { font-weight: 400; }
+@media (max-width: 600px) { .insight-row { grid-template-columns: 1fr; gap: 4px; } }
+
 /* ---------- region + match story ---------- */
 .badge-row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .tag-region { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; background: #eefaf3; color: #1a7f4b; font-size: 12px; font-weight: 600; }

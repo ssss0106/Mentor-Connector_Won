@@ -4,6 +4,7 @@ import { CONCERN_TOPICS } from "./data";
 // PRD 6장: 조건 기반 매칭 (MVP)
 //   관심 분야 일치 +3 / 고민 유형 일치 +3 / 관심 전공 일치 +2 / 멘토 경험 일치 +2
 //   가능한 시간이 겹치면 +1 (동점일 때 우선순위를 가르기 위한 보조 점수)
+//   전공을 바꾼 경험 +1 (학생이 "전공 선택"을 고민할 때만: 전공이 안 맞을까 걱정하는 학생에게 도움)
 //   같은 지역 출신 +2 (지역 청소년이 "같은 처지에서 자란 선배"를 만나도록 추가한 규칙)
 
 export interface MatchResult {
@@ -26,6 +27,11 @@ export function scoreMentor(p: StudentProfile, mentor: Mentor): MatchResult {
   if (p.region !== "기타" && mentor.hometown === p.region) {
     score += 2;
     reasons.push(`같은 지역 출신 (${mentor.hometown})`);
+  }
+
+  if (p.topics.includes("전공 선택") && mentor.insight?.switched) {
+    score += 1;
+    reasons.push("전공을 바꾼 경험이 있어 전공 선택 고민에 도움");
   }
 
   const sharedInterests = p.interests.filter((i) => mentor.interests.includes(i));

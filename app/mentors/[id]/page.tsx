@@ -46,6 +46,40 @@ export default function MentorDetailPage() {
 
           <p style={{ fontSize: 18, fontWeight: 600 }}>“{mentor.intro}”</p>
 
+          {mentor.insight && (
+            <>
+              <h2>전공·대학생활, 실제로는 이랬어요</h2>
+              <div className="insight">
+                <div className="insight-row">
+                  <span className="insight-label">전공 만족도</span>
+                  <span>
+                    <span className="stars-sm">{"★".repeat(mentor.insight.satisfaction)}{"☆".repeat(5 - mentor.insight.satisfaction)}</span> {mentor.insight.satisfaction}/5
+                  </span>
+                </div>
+                <div className="insight-row">
+                  <span className="insight-label">💡 입학 전 몰랐던 점</span>
+                  <span>{mentor.insight.unknownBefore}</span>
+                </div>
+                <div className="insight-row">
+                  <span className="insight-label">😓 힘들었던 점</span>
+                  <span>{mentor.insight.hardPart}</span>
+                </div>
+                {mentor.insight.fitFor && (
+                  <div className="insight-row">
+                    <span className="insight-label">👍 이런 학생에게 잘 맞아요</span>
+                    <span>{mentor.insight.fitFor}</span>
+                  </div>
+                )}
+                {mentor.insight.switched && (
+                  <div className="insight-row insight-switch">
+                    <span className="insight-label">🔄 전공을 바꾼 경험</span>
+                    <span>{mentor.insight.switched.reason}</span>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
           <h2>멘토링 가능 분야</h2>
           <div className="tags">
             {mentor.topics.map((t) => <span key={t} className="tag tag-primary">{t}</span>)}

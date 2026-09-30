@@ -37,6 +37,15 @@ export interface Verification {
   rejectReason?: string;
 }
 
+// 멘토가 겪은 전공·대학생활의 실제 모습 (진학 전 학생에게 가장 필요한 정보)
+export interface MajorInsight {
+  satisfaction: number; // 현재 전공 만족도 1~5
+  unknownBefore: string; // 입학 전에는 몰랐던 점
+  hardPart: string; // 적응하면서 힘들었던 점
+  fitFor?: string; // 이런 학생에게 잘 맞아요
+  switched?: { reason: string }; // 전공을 바꾼 경험 (학과 옮김·복수전공·전공 재선택 포함)
+}
+
 export interface Mentor {
   id: string;
   name: string;
@@ -46,6 +55,7 @@ export interface Mentor {
   interests: string[]; // 관심 분야
   topics: string[]; // 멘토링 가능 분야
   experience: string; // 본인의 경험
+  insight?: MajorInsight; // 전공·대학생활 실제 경험 (구조화)
   intro: string; // 한 줄 소개
   hometown?: string; // 출신 지역 (같은 지역 학생과의 매칭에 사용)
   availableTimes: string[]; // 대략적인 시간대 (매칭 점수용, slots에서 계산)
