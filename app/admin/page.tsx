@@ -5,8 +5,8 @@ import Link from "next/link";
 import StatusBadge from "@/components/StatusBadge";
 import VerificationBadge from "@/components/VerificationBadge";
 import { SEED_MENTORS } from "@/lib/data";
-import { reviewVerification, useStore } from "@/lib/store";
-import type { Mentor } from "@/lib/types";
+import { isVerifiedMentor, reviewEnrollment, reviewVerification, useStore } from "@/lib/store";
+import type { Mentor, VerificationStatus } from "@/lib/types";
 
 // 운영자 페이지 (시연용)
 // 데이터가 브라우저 localStorage에 있으므로, 멘토가 가입한 브라우저와 같은 브라우저에서 열어야 보인다.
@@ -42,41 +42,53 @@ function AdminGate({ onUnlock }: { onUnlock: () => void }) {
   );
 }
 
-function ReviewCard({ mentor }: { mentor: Mentor }) {
+// 서류 한 종류(재학 인증 또는 경력 조회)의 확인 영역
+function DocReview({
+  title,
+  kind,
+  status,
+  rows,
+  checklist,
+  rejectReason,
+  onReview,
+}: {
+  title: string;
+  kind: "enrollment" | "background";
+  status: VerificationStatus;
+  rows: [string, string][];
+  checklist: string;
+  rejectReason?: string;
+  onReview: (approve: boolean, reason?: string) => void;
+}) {
   const [rejecting, setRejecting] = useState(false);
   const [reason, setReason] = useState("");
-  const v = mentor.verification;
 
   return (
-    <div className="card req">
+    <div className="doc-review">
       <div className="req-top">
-        <div>
-          <strong>{mentor.name}</strong>
-          <span className="muted"> · {mentor.university} {mentor.major} {mentor.grade}</span>
-        </div>
-        <VerificationBadge status={v.status} />
+        <strong>{title}</strong>
+        <VerificationBadge status={status} kind={kind} />
       </div>
+      {status === "not_submitted" ? (
+        <div className="muted">아직 제출하지 않았어요.</div>
+      ) : (
+        <ul className="info-list admin-info">
+          {rows.map(([k, v]) => (
+            <li key={k}><span>{k}</span><span>{v}</span></li>
+          ))}
+          {status === "rejected" && <li><span>반려 사유</span><span>{rejectReason || "-"}</span></li>}
+        </ul>
+      )}
 
-      <ul className="info-list admin-info">
-        <li><span>동의서 서명</span><span>{v.consentName ?? "-"}</span></li>
-        <li><span>동의 일시</span><span>{fmt(v.consentAt)}</span></li>
-        <li><span>첨부 파일</span><span>{v.fileName ?? "-"}</span></li>
-        <li><span>제출 일시</span><span>{fmt(v.submittedAt)}</span></li>
-        {(v.status === "approved" || v.status === "rejected") && <li><span>처리 일시</span><span>{fmt(v.reviewedAt)}</span></li>}
-        {v.status === "rejected" && <li><span>반려 사유</span><span>{v.rejectReason || "-"}</span></li>}
-      </ul>
-
-      {v.status === "pending" && (
+      {status === "pending" && (
         <>
-          <div className="admin-checklist">
-            서류에서 확인할 것: 이름이 프로필·서명과 같은지 · 발급일이 최근인지 · 두 항목 모두 조회 결과가 &lsquo;해당 없음&rsquo;인지
-          </div>
+          <div className="admin-checklist">서류에서 확인할 것: {checklist}</div>
           {rejecting ? (
             <div className="reject-box">
               <input className="input" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="반려 사유 (예: 서류의 이름이 프로필과 달라요)" />
               <div className="req-actions">
                 <button className="btn btn-sm btn-ghost" onClick={() => setRejecting(false)}>취소</button>
-                <button className="btn btn-sm btn-danger" disabled={!reason.trim()} onClick={() => reviewVerification(mentor.id, false, reason.trim())}>
+                <button className="btn btn-sm btn-danger" disabled={!reason.trim()} onClick={() => onReview(false, reason.trim())}>
                   반려하기
                 </button>
               </div>
@@ -84,11 +96,56 @@ function ReviewCard({ mentor }: { mentor: Mentor }) {
           ) : (
             <div className="req-actions">
               <button className="btn btn-sm btn-ghost" onClick={() => setRejecting(true)}>반려</button>
-              <button className="btn btn-sm" onClick={() => reviewVerification(mentor.id, true)}>확인 완료</button>
+              <button className="btn btn-sm" onClick={() => onReview(true)}>확인 완료</button>
             </div>
           )}
         </>
       )}
+    </div>
+  );
+}
+
+function ReviewCard({ mentor }: { mentor: Mentor }) {
+  const e = mentor.enrollment;
+  const v = mentor.verification;
+  return (
+    <div className="card req">
+      <div className="req-top">
+        <div>
+          <strong>{mentor.name}</strong>
+          <span className="muted"> · {mentor.university} {mentor.major} {mentor.grade}</span>
+        </div>
+        {isVerifiedMentor(mentor) && <span className="badge verify-approved">✓ 학생에게 공개 중</span>}
+      </div>
+      <DocReview
+        title="재학 인증"
+        kind="enrollment"
+        status={e.status}
+        rows={[
+          ["재학증명서", e.enrollmentFileName ?? "-"],
+          ["성적증명서", e.transcriptFileName ?? "-"],
+          ["제출 일시", fmt(e.submittedAt)],
+          ...((e.status === "approved" || e.status === "rejected") ? [["처리 일시", fmt(e.reviewedAt)] as [string, string]] : []),
+        ]}
+        checklist={`학교·전공이 프로필(${mentor.university} ${mentor.major})과 같은지 · 이름이 같은지 · 발급일이 3개월 이내인지`}
+        rejectReason={e.rejectReason}
+        onReview={(ok, reason) => reviewEnrollment(mentor.id, ok, reason)}
+      />
+      <DocReview
+        title="경력 조회"
+        kind="background"
+        status={v.status}
+        rows={[
+          ["동의서 서명", v.consentName ?? "-"],
+          ["동의 일시", fmt(v.consentAt)],
+          ["첨부 파일", v.fileName ?? "-"],
+          ["제출 일시", fmt(v.submittedAt)],
+          ...((v.status === "approved" || v.status === "rejected") ? [["처리 일시", fmt(v.reviewedAt)] as [string, string]] : []),
+        ]}
+        checklist="이름이 프로필·서명과 같은지 · 발급일이 최근인지 · 두 항목 모두 조회 결과가 ‘해당 없음’인지"
+        rejectReason={v.rejectReason}
+        onReview={(ok, reason) => reviewVerification(mentor.id, ok, reason)}
+      />
     </div>
   );
 }
@@ -107,16 +164,23 @@ export default function AdminPage() {
   if (!ready) return null;
   if (!unlocked) return <AdminGate onUnlock={() => setUnlocked(true)} />;
 
-  // 가입한 멘토만 서류 확인 대상 (시연용 가상 멘토는 이미 확인 완료)
-  const order = { pending: 0, rejected: 1, not_submitted: 2, approved: 3 } as const;
-  const reviewTargets = [...mentors]
-    .filter((m) => m.verification.status !== "not_submitted")
-    .sort((a, b) => order[a.verification.status] - order[b.verification.status]);
-  const count = (s: Mentor["verification"]["status"]) => allMentors.filter((m) => m.verification.status === s).length;
+  // 가입한 멘토만 서류 확인 대상 (시연용 가상 멘토는 이미 인증 완료)
+  const statuses = (m: Mentor) => [m.enrollment.status, m.verification.status];
+  const rank = (m: Mentor) => {
+    const st = statuses(m);
+    return st.includes("pending") ? 0 : st.includes("rejected") ? 1 : isVerifiedMentor(m) ? 3 : 2;
+  };
+  const reviewTargets = mentors
+    .filter((m) => statuses(m).some((st) => st !== "not_submitted"))
+    .sort((a, b) => rank(a) - rank(b));
+  const pendingCount = allMentors.filter((m) => statuses(m).includes("pending")).length;
+  const doneCount = allMentors.filter(isVerifiedMentor).length;
+  const rejectedCount = allMentors.filter((m) => statuses(m).includes("rejected")).length;
+  const missingCount = allMentors.filter((m) => statuses(m).includes("not_submitted")).length;
   const isSeed = (m: Mentor) => SEED_MENTORS.some((s) => s.id === m.id);
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: "verify", label: `경력 조회 확인 (${count("pending")})` },
+    { key: "verify", label: `인증 서류 확인 (${pendingCount})` },
     { key: "mentors", label: `멘토 전체 (${allMentors.length})` },
     { key: "requests", label: `멘토링 신청 (${requests.length})` },
   ];
@@ -138,10 +202,10 @@ export default function AdminPage() {
       </p>
 
       <div className="stats">
-        <div className="card stat"><span>확인 대기</span><strong>{count("pending")}</strong></div>
-        <div className="card stat"><span>경력 조회 완료</span><strong>{count("approved")}</strong></div>
-        <div className="card stat"><span>반려</span><strong>{count("rejected")}</strong></div>
-        <div className="card stat"><span>서류 미제출</span><strong>{count("not_submitted")}</strong></div>
+        <div className="card stat"><span>확인 대기 멘토</span><strong>{pendingCount}</strong></div>
+        <div className="card stat"><span>인증 완료 멘토</span><strong>{doneCount}</strong></div>
+        <div className="card stat"><span>반려 있음</span><strong>{rejectedCount}</strong></div>
+        <div className="card stat"><span>서류 미제출 있음</span><strong>{missingCount}</strong></div>
       </div>
 
       <div className="tabs">
@@ -157,7 +221,7 @@ export default function AdminPage() {
           <div className="card empty">
             확인할 서류가 없어요.
             <br />
-            <span className="muted">멘토로 가입해 동의서와 파일을 제출하면 여기에 나타나요.</span>
+            <span className="muted">멘토로 가입해 재학 서류나 경력 조회 서류를 제출하면 여기에 나타나요.</span>
           </div>
         ) : (
           <div className="req-list">
@@ -168,7 +232,7 @@ export default function AdminPage() {
       {tab === "mentors" && (
         <table className="compare admin-table">
           <thead>
-            <tr><th>이름</th><th>대학 · 전공</th><th>구분</th><th>경력 조회</th></tr>
+            <tr><th>이름</th><th>대학 · 전공</th><th>구분</th><th>재학 인증</th><th>경력 조회</th></tr>
           </thead>
           <tbody>
             {allMentors.map((m) => (
@@ -176,6 +240,7 @@ export default function AdminPage() {
                 <td><Link href={`/mentors/${m.id}`}>{m.name}</Link></td>
                 <td>{m.university} · {m.major}</td>
                 <td>{isSeed(m) ? "시연용 가상 멘토" : "가입 멘토"}</td>
+                <td><VerificationBadge status={m.enrollment.status} kind="enrollment" /></td>
                 <td><VerificationBadge status={m.verification.status} /></td>
               </tr>
             ))}
