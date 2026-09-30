@@ -90,5 +90,5 @@ npm run dev   # http://localhost:3000
 
 ## 랜딩 페이지 추가 섹션
 
-- "선배들은 이렇게 답했어요": 고민 질문과 멘토 답변 예시 6개 (`components/LandingAnswers.tsx`, 시연용 가상 사례)
+- "선배와 나눈 대화 예시": 학생 질문과 선배 답변을 채팅 말풍선으로 보여 주는 예시 6개, 학습·진로·대학생활로 걸러 보기 (`components/LandingAnswers.tsx`, 시연용 가상 사례)
 - "궁금하신 점" FAQ: 페이지 맨 아래, 눌러서 펼치는 방식 (`components/LandingFaq.tsx`)

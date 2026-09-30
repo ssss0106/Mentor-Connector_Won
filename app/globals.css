@@ -408,17 +408,24 @@ main { min-height: calc(100vh - 140px); }
 .chat-room-preview { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .chat-room-preview.bold { color: var(--text); font-weight: 600; }
 
-/* ---------- 랜딩: 선배 답변 사례 · FAQ ---------- */
-.landing-block { padding: 56px 0 16px; text-align: center; }
+/* ---------- 랜딩: 선배와 나눈 대화 예시 ---------- */
+.talk-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; flex-wrap: wrap; margin: 40px 0 16px; }
+.talk-head .section-title { margin: 0; }
+.talk-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.talk-card { display: flex; flex-direction: column; gap: 14px; padding: 20px; }
+.talk-row { display: flex; gap: 10px; align-items: flex-start; }
+.talk-row > div { min-width: 0; }
+.talk-row-me { justify-content: flex-end; text-align: right; }
+.talk-bubble { margin: 4px 0 0; padding: 10px 14px; border-radius: 16px; font-size: 14px; line-height: 1.6; text-align: left; }
+.talk-q { background: #f0f1f6; font-weight: 600; border-top-left-radius: 4px; display: inline-block; }
+.talk-a { background: var(--primary-soft); color: #2d2f6b; border-top-right-radius: 4px; }
+.talk-who { font-size: 12px; font-weight: 700; color: var(--muted); }
+.talk-link { margin-top: auto; align-self: flex-end; font-size: 13px; font-weight: 700; color: var(--primary); }
+.talk-link:hover { text-decoration: underline; }
+
+/* ---------- 랜딩: FAQ ---------- */
 .landing-eyebrow { color: var(--accent); font-size: 13px; font-weight: 800; letter-spacing: 0.08em; margin-bottom: 8px; text-align: center; }
 .landing-title { font-size: 30px; font-weight: 800; margin: 0 0 10px; text-align: center; }
-.landing-sub { color: var(--muted); margin: 0 0 32px; }
-.answer-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; text-align: left; }
-.answer-card { display: flex; flex-direction: column; gap: 12px; }
-.answer-tag { align-self: flex-start; background: var(--primary-soft); color: var(--primary); font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; }
-.answer-card h3 { margin: 0; font-size: 16px; font-weight: 800; line-height: 1.5; }
-.answer-text { margin: 0; flex: 1; border-left: 3px solid var(--accent); padding-left: 14px; color: #4a4e63; font-size: 14px; line-height: 1.75; }
-.answer-by { border-top: 1px solid var(--border); padding-top: 12px; font-size: 13px; color: var(--muted); }
 
 .faq-section { background: #f4f3ff; padding: 64px 0 72px; margin-top: 24px; }
 .faq-list { list-style: none; margin: 32px auto 0; padding: 0; max-width: 760px; border-top: 1px solid var(--border); }
@@ -457,7 +464,7 @@ main { min-height: calc(100vh - 140px); }
   .hero-grid { grid-template-columns: 1fr; }
   .hero-preview { justify-self: center; }
   .review-note { display: block; margin: 4px 0 0; }
-  .features, .detail, .row, .role-cards, .answer-grid { grid-template-columns: 1fr; }
+  .features, .detail, .row, .role-cards, .talk-grid { grid-template-columns: 1fr; }
   .landing-title { font-size: 24px; }
   .stats { grid-template-columns: repeat(2, 1fr); }
   .admin-table { display: block; overflow-x: auto; }
@@ -479,5 +486,5 @@ main { min-height: calc(100vh - 140px); }
 }
 
 @media (max-width: 1000px) and (min-width: 761px) {
-  .answer-grid { grid-template-columns: repeat(2, 1fr); }
+  .talk-grid { grid-template-columns: repeat(2, 1fr); }
 }
