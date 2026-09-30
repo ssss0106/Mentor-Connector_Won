@@ -28,7 +28,8 @@ const REVIEWS = [
 ];
 
 // 첫 화면 미리보기에 보여줄 추천 결과 예시
-const HERO_MENTORS = [SEED_MENTORS[1], SEED_MENTORS[0], SEED_MENTORS[2]];
+// 공부 방법 고민에 맞는 멘토: 이하늘(공부 습관), 류다인(같은 강원 출신·운동과 공부 병행), 윤서아(학원 없이 영어 공부)
+const HERO_MENTORS = ["m3", "m23", "m7"].map((id) => SEED_MENTORS.find((m) => m.id === id)!).filter(Boolean);
 
 const STEPS = [
   { icon: "/images/step1.svg", title: "고민 입력", desc: "지금 가장 큰 고민을 적어요" },
@@ -74,8 +75,8 @@ export default function Home() {
             <div className="preview-concern">
               <Avatar seed="hero-student" size={44} />
               <div>
-                <div className="preview-label">고1 · 강원 · 진로 고민</div>
-                <div className="preview-text">심리학과에 가고 싶은데, 실제로 뭘 배우는지 궁금해요</div>
+                <div className="preview-label">고1 · 강원 · 학습 고민</div>
+                <div className="preview-text">계획을 세워도 오래 못 가요. 나한테 맞는 공부 방법을 찾고 싶어요</div>
               </div>
             </div>
             <div className="preview-arrow">추천 멘토 3명을 찾았어요 ↓</div>
