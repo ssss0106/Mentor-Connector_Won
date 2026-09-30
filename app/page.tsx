@@ -190,7 +190,7 @@ export default function Home() {
               ))}
             </div>
             <div className="lp-compare-col ours">
-              <span className="lp-compare-label">Mentor connector</span>
+              <span className="lp-compare-label">Menco</span>
               {COMPARE.map(([, after]) => (
                 <div key={after} className="lp-compare-item">✓ {after}</div>
               ))}

@@ -1,4 +1,4 @@
-# Mentor connector
+# Menco (Mentor Connector)
 
 지역 청소년과 대학생 선배를 **고민 기반**으로 연결하는 1:1 진로·학습 멘토링 플랫폼 (MVP 데모)
 
