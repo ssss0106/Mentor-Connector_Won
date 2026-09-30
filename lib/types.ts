@@ -84,6 +84,7 @@ export interface MentoringRequest {
   method: string;
   status: RequestStatus;
   createdAt: string;
+  price?: number; // 신청 당시의 이용료(원)
   summary?: LectureSummary;
 }
 

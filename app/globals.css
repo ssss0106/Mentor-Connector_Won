@@ -256,6 +256,10 @@ main { min-height: calc(100vh - 140px); }
 .time-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
 .time-chip { font-size: 15px; font-weight: 600; }
 
+/* ---------- price ---------- */
+.price-box { background: #f6f7ff; border: 1px solid #dfe2ff; border-radius: 12px; padding: 14px 16px; font-size: 14px; line-height: 1.6; }
+.price-box strong { font-size: 16px; color: var(--primary); }
+
 /* ---------- major insight ---------- */
 .insight { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
 .insight-row { display: grid; grid-template-columns: 170px 1fr; gap: 12px; padding: 12px 14px; font-size: 14px; line-height: 1.55; }

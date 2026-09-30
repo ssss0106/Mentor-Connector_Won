@@ -4,6 +4,9 @@
 export const DAYS = ["월", "화", "수", "목", "금", "토", "일"];
 export const HOURS = Array.from({ length: 14 }, (_, i) => i + 9); // 09:00 ~ 22:00 시작
 
+// 멘토링 1회는 30분이다. 멘토 시간표의 한 칸(1시간)에서 30분 멘토링을 2회 받을 수 있다.
+export const SESSION_MINUTES = 30;
+
 export const slotKey = (day: number, hour: number) => `${day}-${hour}`;
 
 export function parseSlot(key: string) {
@@ -80,7 +83,16 @@ const dayIndex = (d: Date) => (d.getDay() + 6) % 7;
 export interface DaySlots {
   date: string; // YYYY-MM-DD
   label: string; // 10/14(화)
-  hours: number[];
+  times: string[]; // 30분 멘토링 시작 시각 ["19:00", "19:30"]
+}
+
+const pad = (n: number) => String(n).padStart(2, "0");
+
+// "19:30" + 30분 → "20:00"
+export function endTime(time: string, minutes = SESSION_MINUTES) {
+  const [h, m] = time.split(":").map(Number);
+  const total = h * 60 + m + minutes;
+  return `${pad(Math.floor(total / 60))}:${pad(total % 60)}`;
 }
 
 // 오늘부터 N일 동안, 시간표에 맞는 실제 예약 가능 시간 (지금부터 1시간 이내 시간은 제외)
@@ -88,22 +100,23 @@ export function upcomingSlots(slots: string[], days = 14, now = new Date()): Day
   const result: DaySlots[] = [];
   for (let i = 0; i < days; i++) {
     const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
-    const hours = slots
+    const times = slots
       .map(parseSlot)
       .filter((s) => s.day === dayIndex(d))
-      .map((s) => s.hour)
-      .filter((h) => new Date(d.getFullYear(), d.getMonth(), d.getDate(), h).getTime() > now.getTime() + 3600_000)
-      .sort((a, b) => a - b);
-    if (hours.length) result.push({ date: dateKey(d), label: `${d.getMonth() + 1}/${d.getDate()}(${DAYS[dayIndex(d)]})`, hours });
+      .flatMap((s) => [`${pad(s.hour)}:00`, `${pad(s.hour)}:30`])
+      .filter((t) => {
+        const [h, m] = t.split(":").map(Number);
+        return new Date(d.getFullYear(), d.getMonth(), d.getDate(), h, m).getTime() > now.getTime() + 3600_000;
+      })
+      .sort();
+    if (times.length) result.push({ date: dateKey(d), label: `${d.getMonth() + 1}/${d.getDate()}(${DAYS[dayIndex(d)]})`, times });
   }
   return result;
 }
 
-// 신청 일시 표시: "10/14(화) 19:00~20:00" (예전 형식 데이터는 그대로 표시)
+// 신청 일시 표시: "10/14(화) 19:00~19:30" (알 수 없는 형식은 그대로 표시)
 export function formatSession(date: string, time: string) {
-  const m = /^(\d{2}):00$/.exec(time);
   const d = new Date(`${date}T00:00:00`);
-  if (!m || isNaN(d.getTime())) return `${date} · ${time}`;
-  const h = Number(m[1]);
-  return `${d.getMonth() + 1}/${d.getDate()}(${DAYS[dayIndex(d)]}) ${hourLabel(h)}~${hourLabel(h + 1)}`;
+  if (!/^\d{2}:\d{2}$/.test(time) || isNaN(d.getTime())) return `${date} · ${time}`;
+  return `${d.getMonth() + 1}/${d.getDate()}(${DAYS[dayIndex(d)]}) ${time}~${endTime(time)}`;
 }

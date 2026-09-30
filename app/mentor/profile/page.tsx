@@ -202,7 +202,7 @@ export default function MentorProfilePage() {
 
         <div className="field">
           <label className="label">
-            가능한 멘토링 시간 <span className="hint">매주 반복돼요 · 칸을 눌러 가능한 시간(1시간 단위)을 모두 선택하세요</span>
+            가능한 멘토링 시간 <span className="hint">매주 반복돼요 · 칸을 눌러 가능한 시간(1시간 단위)을 모두 선택하세요 · 한 칸에서 30분 멘토링을 2회 받을 수 있어요</span>
           </label>
           <SlotGrid value={slots} onChange={isSeed ? undefined : setSlots} />
           <p className="muted" style={{ margin: "8px 0 0" }}>

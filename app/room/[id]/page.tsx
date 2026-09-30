@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import Avatar from "@/components/Avatar";
 import LectureRecorder from "@/components/LectureRecorder";
-import { formatSession } from "@/lib/schedule";
+import { SESSION_MINUTES, formatSession } from "@/lib/schedule";
 import { setRequestStatus, useStore } from "@/lib/store";
 
 function formatTime(sec: number) {
@@ -107,7 +107,7 @@ export default function RoomPage() {
         </div>
         <div className="room-status">
           <span className={`dot ${joined ? "live" : ""}`} />
-          {joined ? `진행 중 ${formatTime(seconds)}` : "상대방을 기다리는 중…"}
+          {joined ? `진행 중 ${formatTime(seconds)} / ${SESSION_MINUTES}:00` : "상대방을 기다리는 중…"}
         </div>
       </div>
 

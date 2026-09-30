@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Avatar from "@/components/Avatar";
 import MentorCard from "@/components/MentorCard";
-import { SEED_MENTORS } from "@/lib/data";
+import { SEED_MENTORS, SESSION_PRICE, formatPrice } from "@/lib/data";
 import { useStore } from "@/lib/store";
 
 // 시연용 예시 후기 (실제 이용자 후기가 아님)
@@ -103,7 +103,7 @@ export default function Home() {
             <img src="/images/step3.svg" alt="" className="feature-icon" />
             <div className="num">STEP 3</div>
             <h3>1:1 멘토링 신청</h3>
-            <p>원하는 날짜와 시간, 묻고 싶은 내용을 적어 신청하면 끝!</p>
+            <p>30분 1:1 멘토링을 원하는 날짜와 시간, 묻고 싶은 내용과 함께 신청하면 끝! (1회 {formatPrice(SESSION_PRICE)})</p>
           </div>
         </div>
 
@@ -152,6 +152,7 @@ export default function Home() {
             <tr><td>수업·성적 향상</td><td>진로·학습·대학생활 경험 공유</td></tr>
             <tr><td>전문 강사·과외 중심</td><td>대학생 선배 중심</td></tr>
             <tr><td>수도권 학원가 중심</td><td>지역 어디서든 온라인으로, 같은 지역 출신 선배까지</td></tr>
+            <tr><td>선생님마다 다른 수업료</td><td>모든 멘토 30분 1회 {formatPrice(SESSION_PRICE)} 동일</td></tr>
             <tr><td>가격·수업 조건 비교</td><td>경험·전공·관심 분야 기반 선택</td></tr>
           </tbody>
         </table>

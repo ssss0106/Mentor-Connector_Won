@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { METHODS } from "@/lib/data";
-import { formatSession, hourLabel, upcomingSlots } from "@/lib/schedule";
+import { METHODS, SESSION_PRICE, formatPrice } from "@/lib/data";
+import { SESSION_MINUTES, endTime, formatSession, upcomingSlots } from "@/lib/schedule";
 import { createRequest, useStore } from "@/lib/store";
 
 export default function ApplyPage() {
@@ -40,7 +40,7 @@ export default function ApplyPage() {
   // 첫 번째로 예약 가능한 날짜를 기본 선택
   useEffect(() => {
     if (date || !days.length) return;
-    const first = days.find((d) => d.hours.some((h) => !booked.has(`${d.date} ${hourLabel(h)}`)));
+    const first = days.find((d) => d.times.some((t) => !booked.has(`${d.date} ${t}`)));
     if (first) setDate(first.date);
   }, [days, booked, date]);
 
@@ -65,8 +65,9 @@ export default function ApplyPage() {
       time,
       method,
       message: message.trim(),
+      price: SESSION_PRICE,
     });
-    alert(`${mentor.name} 멘토에게 ${formatSession(date, time)} 멘토링을 신청했어요! 마이페이지에서 진행 상태를 확인할 수 있어요.`);
+    alert(`${mentor.name} 멘토에게 ${formatSession(date, time)} 멘토링(30분, ${formatPrice(SESSION_PRICE)})을 신청했어요! 마이페이지에서 진행 상태를 확인할 수 있어요.`);
     router.push("/mypage");
   };
 
@@ -93,7 +94,7 @@ export default function ApplyPage() {
           ) : (
             <div className="date-list">
               {days.map((d) => {
-                const free = d.hours.filter((h) => !booked.has(`${d.date} ${hourLabel(h)}`)).length;
+                const free = d.times.filter((t) => !booked.has(`${d.date} ${t}`)).length;
                 return (
                   <button
                     type="button"
@@ -117,11 +118,10 @@ export default function ApplyPage() {
         {selectedDay && (
           <div className="field">
             <label className="label">
-              시간 선택 <span className="hint">1시간 멘토링</span>
+              시간 선택 <span className="hint">{SESSION_MINUTES}분 멘토링 1회</span>
             </label>
             <div className="time-list">
-              {selectedDay.hours.map((h) => {
-                const t = hourLabel(h);
+              {selectedDay.times.map((t) => {
                 const taken = booked.has(`${selectedDay.date} ${t}`);
                 return (
                   <button
@@ -131,7 +131,7 @@ export default function ApplyPage() {
                     disabled={taken}
                     onClick={() => setTime(t)}
                   >
-                    {t}~{hourLabel(h + 1)}
+                    {t}~{endTime(t)}
                     {taken && <small>예약됨</small>}
                   </button>
                 );
@@ -152,8 +152,16 @@ export default function ApplyPage() {
           <textarea id="msg" className="textarea" value={message} onChange={(e) => setMessage(e.target.value)} placeholder="선배에게 묻고 싶은 내용을 자유롭게 적어주세요." />
         </div>
 
+        <div className="price-box">
+          <div>
+            <strong>이용료 {formatPrice(SESSION_PRICE)}</strong>
+            <span className="muted"> · {SESSION_MINUTES}분 1회 · 모든 멘토 동일</span>
+          </div>
+          <div className="muted">시연 화면이라 실제로 결제되지 않아요.</div>
+        </div>
+
         <button className="btn btn-block" disabled={!valid}>
-          {date && time ? `${formatSession(date, time)} 신청하기` : "날짜와 시간을 선택해 주세요"}
+          {date && time ? `${formatSession(date, time)} · ${formatPrice(SESSION_PRICE)} 신청하기` : "날짜와 시간을 선택해 주세요"}
         </button>
       </form>
     </div>

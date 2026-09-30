@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import StatusBadge from "@/components/StatusBadge";
 import VerificationBadge from "@/components/VerificationBadge";
-import { STATUS_LABEL } from "@/lib/data";
+import { STATUS_LABEL, formatPrice } from "@/lib/data";
 import { formatSession } from "@/lib/schedule";
 import { canChat, resetAll, setRequestStatus, unreadCount, useStore } from "@/lib/store";
 import type { Mentor, MentoringRequest, RequestStatus } from "@/lib/types";
@@ -44,6 +44,7 @@ function RequestItem({ req, mentor, asMentor, unread }: { req: MentoringRequest;
           {!asMentor && mentor && <span className="muted"> · {mentor.university} {mentor.major}</span>}
           <div className="muted">
             {formatSession(req.date, req.time)} · {req.method}
+            {!asMentor && req.price !== undefined && ` · ${formatPrice(req.price)}`}
           </div>
         </div>
         <StatusBadge status={req.status} />
