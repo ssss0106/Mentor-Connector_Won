@@ -54,8 +54,10 @@ export default function LandingFaq() {
   return (
     <section className="faq-section">
       <div className="container">
-        <div className="landing-eyebrow">FAQ</div>
-        <h2 className="landing-title">궁금하신 점</h2>
+        <div className="lp-head">
+          <h2>자주 묻는 질문</h2>
+          <p>궁금한 질문을 눌러 보세요.</p>
+        </div>
         <ul className="faq-list">
           {FAQS.map((f, i) => {
             const isOpen = open === i;

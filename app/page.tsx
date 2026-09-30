@@ -4,34 +4,43 @@ import Link from "next/link";
 import Avatar from "@/components/Avatar";
 import LandingAnswers from "@/components/LandingAnswers";
 import LandingFaq from "@/components/LandingFaq";
-import MentorCard from "@/components/MentorCard";
 import { SEED_MENTORS, SESSION_PRICE, formatPrice } from "@/lib/data";
+import { SESSION_MINUTES } from "@/lib/schedule";
 import { useStore } from "@/lib/store";
 
 // 시연용 예시 후기 (실제 이용자 후기가 아님)
 const REVIEWS = [
   {
     name: "강원 고1 학생",
-    info: "진로 고민 · 심리학과 멘토와 멘토링",
-    text: "심리학과에 가고 싶었는데 주변에 물어볼 사람이 없었어요. 선배가 실제로 배우는 과목이랑 진로를 알려줘서 목표가 확실해졌어요.",
+    info: "진로 고민 · 심리학과 멘토",
+    text: "주변에 물어볼 사람이 없었는데, 실제로 배우는 과목과 진로를 듣고 목표가 확실해졌어요.",
   },
   {
     name: "전남 중3 학생",
-    info: "학습 고민 · 교육학과 멘토와 멘토링",
-    text: "공부 계획을 세워도 매번 흐지부지됐는데, 선배가 직접 썼던 플래너 방법을 알려줘서 한 달째 지키고 있어요!",
+    info: "학습 고민 · 교육학과 멘토",
+    text: "멘토가 직접 썼던 플래너 방법을 알려줘서 한 달째 계획을 지키고 있어요!",
   },
   {
     name: "경북 고2 학생",
-    info: "대학생활 고민 · 경영학과 멘토와 멘토링",
-    text: "대학생활이 막연하게만 느껴졌는데 동아리, 대외활동 이야기를 들으니 대학에 가고 싶은 이유가 생겼어요.",
+    info: "대학생활 고민 · 경영학과 멘토",
+    text: "동아리와 대외활동 이야기를 들으니 대학에 가고 싶은 이유가 생겼어요.",
   },
 ];
 
 // 첫 화면 미리보기에 보여줄 추천 결과 예시
-const HERO_MENTORS = [
-  { ...SEED_MENTORS[1], score: 13 },
-  { ...SEED_MENTORS[0], score: 9 },
-  { ...SEED_MENTORS[2], score: 6 },
+const HERO_MENTORS = [SEED_MENTORS[1], SEED_MENTORS[0], SEED_MENTORS[2]];
+
+const STEPS = [
+  { icon: "/images/step1.svg", title: "고민 입력", desc: "지금 가장 큰 고민을 적어요" },
+  { icon: "/images/step2.svg", title: "맞춤 멘토 추천", desc: "고민을 먼저 겪은 멘토를 찾아드려요" },
+  { icon: "/images/step3.svg", title: "1:1 멘토링", desc: `${SESSION_MINUTES}분 온라인으로 이야기해요` },
+];
+
+const COMPARE = [
+  ["과목 중심", "고민 중심"],
+  ["선생님을 직접 탐색", "나에게 맞는 멘토 추천"],
+  ["수도권 학원가 중심", "지역 어디서든 온라인으로"],
+  ["선생님마다 다른 수업료", `모든 멘토 ${SESSION_MINUTES}분 ${formatPrice(SESSION_PRICE)}`],
 ];
 
 export default function Home() {
@@ -45,23 +54,21 @@ export default function Home() {
       <section className="hero">
         <div className="container hero-grid">
           <div>
-          <span className="hero-eyebrow">지역 청소년 × 대학생 선배 1:1 멘토링</span>
-          <h1>
-            내 고민을 <em>먼저 경험한</em>
-            <br />
-            대학생 선배를 만나보세요
-          </h1>
-          <p>
-            과목이 아니라 고민으로 연결해요. 물어볼 곳이 없던 진로·학습·대학생활 고민도, 같은 지역에서 자란 선배에게 온라인으로 물어보세요.
-          </p>
-          <div className="hero-actions">
-            <Link href={findHref} className="btn">
-              나에게 맞는 멘토 찾기 →
-            </Link>
-            <Link href="/signup?role=mentor" className="btn btn-outline">
-              멘토로 참여하기
-            </Link>
-          </div>
+            <span className="hero-eyebrow">지역 청소년 × 대학생 멘토 1:1</span>
+            <h1>
+              내 고민을 <em>먼저 경험한</em>
+              <br />
+              대학생 선배를 만나보세요
+            </h1>
+            <p>진로·학습·대학생활 고민, 먼저 겪어 본 멘토에게 온라인으로 물어보세요.</p>
+            <div className="hero-actions">
+              <Link href={findHref} className="btn">
+                나에게 맞는 멘토 찾기 →
+              </Link>
+              <Link href="/signup?role=mentor" className="btn btn-outline">
+                멘토로 참여하기
+              </Link>
+            </div>
           </div>
           <div className="hero-preview" aria-hidden="true">
             <div className="preview-concern">
@@ -79,93 +86,131 @@ export default function Home() {
                   <strong>{m.name} 멘토</strong>
                   <span className="muted">{m.university} · {m.major}</span>
                 </div>
-                <span className="score">{m.score}점</span>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="container">
-        <h2 className="section-title">이렇게 이용해요</h2>
-        <div className="features">
-          <div className="card feature">
-            <img src="/images/step1.svg" alt="" className="feature-icon" />
-            <div className="num">STEP 1</div>
-            <h3>고민 입력</h3>
-            <p>학년, 관심 분야, 관심 전공, 지금 가장 큰 고민을 간단히 적어요.</p>
+      {/* 이용 방법 */}
+      <section className="lp-section">
+        <div className="container">
+          <div className="lp-head">
+            <h2>이렇게 이용해요</h2>
+            <p>세 단계면 충분해요.</p>
           </div>
-          <div className="card feature">
-            <img src="/images/step2.svg" alt="" className="feature-icon" />
-            <div className="num">STEP 2</div>
-            <h3>맞춤 선배 추천</h3>
-            <p>내 고민을 먼저 경험한 대학생 멘토를 추천 이유와 함께 보여드려요.</p>
-          </div>
-          <div className="card feature">
-            <img src="/images/step3.svg" alt="" className="feature-icon" />
-            <div className="num">STEP 3</div>
-            <h3>1:1 멘토링 신청</h3>
-            <p>30분 1:1 멘토링을 원하는 날짜와 시간, 묻고 싶은 내용과 함께 신청하면 끝! (1회 {formatPrice(SESSION_PRICE)})</p>
-          </div>
+          <ol className="lp-steps">
+            {STEPS.map((s, i) => (
+              <li key={s.title} className="lp-step">
+                <img src={s.icon} alt="" />
+                <span className="lp-step-num">{String(i + 1).padStart(2, "0")}</span>
+                <h3>{s.title}</h3>
+                <p>{s.desc}</p>
+              </li>
+            ))}
+          </ol>
         </div>
+      </section>
 
-        <h2 className="section-title">이런 선배들이 기다리고 있어요</h2>
-        <div className="grid">
-          {SEED_MENTORS.slice(0, 3).map((m) => (
-            <MentorCard key={m.id} mentor={m} />
-          ))}
+      {/* 멘토 소개 */}
+      <section className="lp-section lp-white">
+        <div className="container">
+          <div className="lp-head">
+            <h2>이런 멘토들이 기다리고 있어요</h2>
+            <p>재학 인증과 경력 조회를 마친 대학생 멘토예요.</p>
+          </div>
+          <div className="lp-mentors">
+            {SEED_MENTORS.slice(0, 3).map((m) => (
+              <Link key={m.id} href={`/mentors/${m.id}`} className="lp-mentor">
+                <Avatar seed={m.id + m.name} size={64} />
+                <strong>{m.name} 멘토</strong>
+                <span className="muted">
+                  {m.university} · {m.major}
+                </span>
+                <p>“{m.intro}”</p>
+                <span className="lp-verified">✓ 인증 멘토</span>
+              </Link>
+            ))}
+          </div>
+          <div className="lp-more">
+            <Link href="/mentors" className="btn btn-ghost">
+              멘토 전체 보기
+            </Link>
+          </div>
         </div>
-        <div style={{ textAlign: "center", marginTop: 20 }}>
-          <Link href="/mentors" className="btn btn-ghost">
-            멘토 전체 보기
+      </section>
+
+      {/* 대화 예시 */}
+      <section className="lp-section">
+        <div className="container">
+          <div className="lp-head">
+            <h2>멘토와 나눈 대화 예시</h2>
+            <p>시연용으로 작성한 가상 사례예요.</p>
+          </div>
+          <LandingAnswers />
+        </div>
+      </section>
+
+      {/* 후기 */}
+      <section className="lp-section lp-white">
+        <div className="container">
+          <div className="lp-head">
+            <h2>이용 후기</h2>
+            <p>시연용으로 작성한 가상 후기예요.</p>
+          </div>
+          <div className="lp-reviews">
+            {REVIEWS.map((r) => (
+              <figure key={r.name} className="lp-review">
+                <div className="stars" aria-label="별점 5점">★★★★★</div>
+                <blockquote>{r.text}</blockquote>
+                <figcaption>
+                  <Avatar seed={r.name} size={32} />
+                  <div>
+                    <strong>{r.name}</strong>
+                    <div className="muted">{r.info}</div>
+                  </div>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 차별점 */}
+      <section className="lp-section">
+        <div className="container">
+          <div className="lp-head">
+            <h2>기존 과외 플랫폼과 달라요</h2>
+          </div>
+          <div className="lp-compare">
+            <div className="lp-compare-col">
+              <span className="lp-compare-label">기존 과외 플랫폼</span>
+              {COMPARE.map(([before]) => (
+                <div key={before} className="lp-compare-item">{before}</div>
+              ))}
+            </div>
+            <div className="lp-compare-col ours">
+              <span className="lp-compare-label">Mentor connector</span>
+              {COMPARE.map(([, after]) => (
+                <div key={after} className="lp-compare-item">✓ {after}</div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 마무리 */}
+      <section className="lp-cta">
+        <div className="container">
+          <p>
+            어떤 과목을 누구에게 배울지가 아니라,
+            <br />
+            <em>어떤 고민에 어떤 경험이 필요한지</em>를 연결해요.
+          </p>
+          <Link href={findHref} className="btn">
+            나에게 맞는 멘토 찾기 →
           </Link>
         </div>
-
-        <LandingAnswers />
-
-        <h2 className="section-title">
-          이용 후기 <span className="review-note">예시 후기 · MVP 데모용으로 작성한 가상 후기예요</span>
-        </h2>
-        <div className="grid">
-          {REVIEWS.map((r) => (
-            <div key={r.name} className="card review">
-              <div className="stars">★★★★★</div>
-              <p>“{r.text}”</p>
-              <div className="review-who">
-                <Avatar seed={r.name} size={40} />
-                <div>
-                  <strong>{r.name}</strong>
-                  <div className="muted">{r.info}</div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <h2 className="section-title">기존 과외 플랫폼과 무엇이 다른가요?</h2>
-        <table className="compare">
-          <thead>
-            <tr>
-              <th>기존 과외 플랫폼</th>
-              <th>Mentor connector</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr><td>과목 중심</td><td>고민 중심</td></tr>
-            <tr><td>선생님 탐색</td><td>나에게 맞는 선배 추천</td></tr>
-            <tr><td>수업·성적 향상</td><td>진로·학습·대학생활 경험 공유</td></tr>
-            <tr><td>전문 강사·과외 중심</td><td>대학생 선배 중심</td></tr>
-            <tr><td>수도권 학원가 중심</td><td>지역 어디서든 온라인으로, 같은 지역 출신 선배까지</td></tr>
-            <tr><td>선생님마다 다른 수업료</td><td>모든 멘토 30분 1회 {formatPrice(SESSION_PRICE)} 동일</td></tr>
-            <tr><td>가격·수업 조건 비교</td><td>경험·전공·관심 분야 기반 선택</td></tr>
-          </tbody>
-        </table>
-
-        <p className="quote">
-          ‘어떤 과목을 누구에게 배울지’가 아니라
-          <br />
-          <em>‘어떤 고민을 가진 학생에게 어떤 경험을 가진 선배가 필요한지’</em>를 연결합니다.
-        </p>
       </section>
 
       <LandingFaq />
