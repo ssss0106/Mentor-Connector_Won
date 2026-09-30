@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ChipSelect from "@/components/ChipSelect";
 import SlotGrid from "@/components/SlotGrid";
-import { ALL_TOPICS, HOMETOWNS, INTERESTS, MENTOR_GRADES, SEED_MENTORS } from "@/lib/data";
+import { ADMISSION_PATHS, ALL_TOPICS, GPA_SCALES, HOMETOWNS, INTERESTS, MENTOR_GRADES, SEED_MENTORS } from "@/lib/data";
 import { slotsToBands, summarizeSlots } from "@/lib/schedule";
 import { saveMentorProfile, useStore } from "@/lib/store";
 
@@ -29,6 +29,10 @@ export default function MentorProfilePage() {
   const [fitFor, setFitFor] = useState("");
   const [switched, setSwitched] = useState(false);
   const [switchReason, setSwitchReason] = useState("");
+  const [admissionPath, setAdmissionPath] = useState("");
+  const [hsGrade, setHsGrade] = useState("");
+  const [gpaValue, setGpaValue] = useState("");
+  const [gpaScale, setGpaScale] = useState("4.5");
   const [slots, setSlots] = useState<string[]>([]);
   const [online, setOnline] = useState(true);
 
@@ -55,6 +59,10 @@ export default function MentorProfilePage() {
     setFitFor(m.insight?.fitFor ?? "");
     setSwitched(!!m.insight?.switched);
     setSwitchReason(m.insight?.switched?.reason ?? "");
+    setAdmissionPath(m.admission?.path ?? "");
+    setHsGrade(m.admission ? String(m.admission.highSchoolGrade) : "");
+    setGpaValue(m.admission?.collegeGpa ? String(m.admission.collegeGpa.value) : "");
+    setGpaScale(String(m.admission?.collegeGpa?.scale ?? 4.5));
     setSlots(m.slots ?? []);
     setOnline(m.online);
     // existing은 매 렌더마다 새로 계산되므로 id 기준으로만 다시 불러온다
@@ -62,7 +70,11 @@ export default function MentorProfilePage() {
 
   if (!ready || !currentUser) return null;
 
-  const valid = name.trim() && university.trim() && major.trim() && topics.length > 0 && intro.trim() && hometown && slots.length > 0 &&
+  const hs = Number(hsGrade);
+  const hsOk = hsGrade.trim() !== "" && hs >= 1 && hs <= 9;
+  const gpa = Number(gpaValue);
+  const gpaOk = gpaValue.trim() === "" || (gpa > 0 && gpa <= Number(gpaScale));
+  const valid = admissionPath && hsOk && gpaOk && name.trim() && university.trim() && major.trim() && topics.length > 0 && intro.trim() && hometown && slots.length > 0 &&
     satisfaction && unknownBefore.trim() && hardPart.trim() && (!switched || switchReason.trim());
 
   const submit = (e: React.FormEvent) => {
@@ -80,6 +92,11 @@ export default function MentorProfilePage() {
         experience: experience.trim(),
         intro: intro.trim(),
         hometown,
+        admission: {
+          path: admissionPath,
+          highSchoolGrade: Math.round(hs * 100) / 100,
+          ...(gpaValue.trim() ? { collegeGpa: { value: Math.round(gpa * 100) / 100, scale: Number(gpaScale) } } : {}),
+        },
         insight: {
           satisfaction: Number(satisfaction),
           unknownBefore: unknownBefore.trim(),
@@ -160,6 +177,35 @@ export default function MentorProfilePage() {
         <div className="field">
           <label className="label" htmlFor="exp">나의 경험</label>
           <textarea id="exp" className="textarea" value={experience} onChange={(e) => setExperience(e.target.value)} placeholder="중·고등학생 때의 고민, 전공을 선택한 계기, 공부 방법 등 후배에게 나눌 수 있는 경험을 적어주세요." />
+        </div>
+
+        <div className="field insight-form">
+          <label className="label">
+            입시·성적 정보 <span className="hint">학생이 참고하도록 본인이 직접 입력해요 · 추천 순서에는 쓰이지 않아요</span>
+          </label>
+          <div className="field">
+            <label className="label" htmlFor="adm">거친 입시 전형</label>
+            <select id="adm" className="select" value={admissionPath} onChange={(e) => setAdmissionPath(e.target.value)}>
+              <option value="">선택해 주세요</option>
+              {ADMISSION_PATHS.map((a) => <option key={a}>{a}</option>)}
+            </select>
+          </div>
+          <div className="field">
+            <label className="label" htmlFor="hs">고등학교 내신 등급 <span className="hint">전 과목 평균, 소수점까지 입력해요 (1~9)</span></label>
+            <input id="hs" className="input" type="number" inputMode="decimal" step="0.01" min="1" max="9" value={hsGrade} onChange={(e) => setHsGrade(e.target.value)} placeholder="예: 2.35" />
+            {hsGrade.trim() !== "" && !hsOk && <span className="field-error">1.00~9.00 사이로 입력해 주세요.</span>}
+          </div>
+          <div className="field">
+            <label className="label" htmlFor="gpa">대학 학점 <span className="hint">선택 · 공개하고 싶을 때만 입력하고, 비우면 공개하지 않아요</span></label>
+            <div className="gpa-row">
+              <input id="gpa" className="input" type="number" inputMode="decimal" step="0.01" min="0" value={gpaValue} onChange={(e) => setGpaValue(e.target.value)} placeholder="예: 3.85" />
+              <span>/</span>
+              <select className="select" value={gpaScale} onChange={(e) => setGpaScale(e.target.value)} aria-label="학점 만점">
+                {GPA_SCALES.map((g) => <option key={g} value={g}>{g.toFixed(1)}</option>)}
+              </select>
+            </div>
+            {!gpaOk && <span className="field-error">학점은 0보다 크고 만점({gpaScale}) 이하로 입력해 주세요.</span>}
+          </div>
         </div>
 
         <div className="field insight-form">

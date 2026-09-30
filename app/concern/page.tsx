@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ChipSelect from "@/components/ChipSelect";
-import { CONCERN_TOPICS, GRADES, INTERESTS, REGIONS, TIMES } from "@/lib/data";
+import { ADMISSION_PATHS, CONCERN_TOPICS, GRADES, INTERESTS, REGIONS, TIMES } from "@/lib/data";
 import { saveStudentProfile, useStore } from "@/lib/store";
 import type { ConcernCategory } from "@/lib/types";
 
@@ -21,6 +21,7 @@ export default function ConcernPage() {
   const [region, setRegion] = useState("강원");
   const [interests, setInterests] = useState<string[]>([]);
   const [desiredMajor, setDesiredMajor] = useState("");
+  const [admissionPath, setAdmissionPath] = useState("");
   const [category, setCategory] = useState<ConcernCategory>("진로");
   const [topics, setTopics] = useState<string[]>([]);
   const [concern, setConcern] = useState("");
@@ -33,6 +34,7 @@ export default function ConcernPage() {
     setRegion(myProfile.region);
     setInterests(myProfile.interests);
     setDesiredMajor(myProfile.desiredMajor);
+    setAdmissionPath(myProfile.admissionPath ?? "");
     setCategory(myProfile.category);
     setTopics(myProfile.topics);
     setConcern(myProfile.concern);
@@ -56,6 +58,7 @@ export default function ConcernPage() {
       region,
       interests,
       desiredMajor: desiredMajor.trim(),
+      admissionPath,
       category,
       topics,
       concern: concern.trim(),
@@ -93,6 +96,14 @@ export default function ConcernPage() {
         <div className="field">
           <label className="label" htmlFor="major">관심 전공 <span className="hint">선택 · 아직 모르면 비워도 돼요</span></label>
           <input id="major" className="input" value={desiredMajor} onChange={(e) => setDesiredMajor(e.target.value)} placeholder="예: 심리학과" />
+        </div>
+
+        <div className="field">
+          <label className="label" htmlFor="adm">준비하는 입시 전형 <span className="hint">선택 · 같은 전형을 겪은 선배를 먼저 추천해요</span></label>
+          <select id="adm" className="select" value={admissionPath} onChange={(e) => setAdmissionPath(e.target.value)}>
+            <option value="">아직 몰라요</option>
+            {ADMISSION_PATHS.map((a) => <option key={a}>{a}</option>)}
+          </select>
         </div>
 
         <div className="field">

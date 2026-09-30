@@ -11,6 +11,7 @@ const SYSTEM_PROMPT = `너는 지방·소도시 청소년과 대학생 멘토를
 멘토마다 2문장 이내, 120자 이내로 쓰되, 학생의 고민과 그 멘토가 직접 겪은 경험이 어떻게 이어지는지 구체적으로 적어줘.
 멘토의 출신 지역이 학생의 지역과 같으면 자연스럽게 언급해줘.
 멘토의 unknownBefore(입학 전 몰랐던 점), hardPart(힘들었던 점), switched(전공을 바꾼 경험)가 학생의 고민과 맞닿으면 그 내용을 근거로 구체적으로 짚어줘. 전공을 바꾼 경험은 "전과"라고 하지 말고 "전공을 바꾼"이라고 표현해.
+학생이 준비하는 입시 전형(admissionPath)과 멘토가 거친 전형이 같으면 언급해줘. 내신 등급이나 학점 같은 성적 숫자는 절대 언급하지 마.
 자료에 없는 사실은 지어내지 말고, 좋은 결과나 성과를 약속하지 마. 연락처를 주고받는 이야기는 하지 마.
 학생에게 말하듯 "~예요" 체로 써줘.
 아래 JSON으로만 답해: {"reasons":[{"id":"멘토 id","text":"설명"}]}`;
@@ -38,6 +39,7 @@ export async function POST(req: Request) {
     category: clip(s.category, 10),
     topics: clipList(s.topics, 6, 20),
     desiredMajor: clip(s.desiredMajor, 40),
+    admissionPath: clip(s.admissionPath, 20),
     concern: clip(s.concern, 600),
   };
   const mentors = body.mentors.slice(0, 5).map((m) => ({
@@ -45,6 +47,7 @@ export async function POST(req: Request) {
     university: clip(m.university, 40),
     major: clip(m.major, 40),
     hometown: clip(m.hometown, 10),
+    admissionPath: clip(m.admissionPath, 20),
     unknownBefore: clip(m.unknownBefore, 150),
     hardPart: clip(m.hardPart, 150),
     switched: clip(m.switched, 200),

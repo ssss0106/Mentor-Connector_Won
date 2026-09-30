@@ -33,6 +33,7 @@ export function useAiReasons(profile: StudentProfile | null, mentors: Mentor[]) 
             category: profile.category,
             topics: profile.topics,
             desiredMajor: profile.desiredMajor,
+            admissionPath: profile.admissionPath ?? "",
             concern: profile.concern,
           },
           mentors: mentors.map((m) => ({
@@ -40,6 +41,7 @@ export function useAiReasons(profile: StudentProfile | null, mentors: Mentor[]) 
             university: m.university,
             major: m.major,
             hometown: m.hometown ?? "",
+            admissionPath: m.admission?.path ?? "",
             unknownBefore: m.insight?.unknownBefore ?? "",
             hardPart: m.insight?.hardPart ?? "",
             switched: m.insight?.switched?.reason ?? "",

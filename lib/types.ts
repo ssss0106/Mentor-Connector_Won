@@ -21,6 +21,7 @@ export interface StudentProfile {
   category: ConcernCategory; // 주요 고민 카테고리
   topics: string[]; // 원하는 멘토링 분야 (세부 고민)
   concern: string; // 고민 내용
+  admissionPath?: string; // 준비하는 입시 전형 (선택)
   availableTimes: string[];
 }
 
@@ -46,6 +47,13 @@ export interface MajorInsight {
   switched?: { reason: string }; // 전공을 바꾼 경험 (학과 옮김·복수전공·전공 재선택 포함)
 }
 
+// 멘토가 직접 입력하는 입시·성적 정보 (서류로 확인된 정보가 아니며 추천 순서에는 쓰지 않는다)
+export interface AdmissionInfo {
+  path: string; // 입시 전형
+  highSchoolGrade: number; // 고등학교 내신 등급 평균 (소수점 가능, 1~9)
+  collegeGpa?: { value: number; scale: number }; // 대학 학점 (선택 공개)
+}
+
 export interface Mentor {
   id: string;
   name: string;
@@ -56,6 +64,7 @@ export interface Mentor {
   topics: string[]; // 멘토링 가능 분야
   experience: string; // 본인의 경험
   insight?: MajorInsight; // 전공·대학생활 실제 경험 (구조화)
+  admission?: AdmissionInfo; // 입시·성적 정보 (본인 입력)
   intro: string; // 한 줄 소개
   hometown?: string; // 출신 지역 (같은 지역 학생과의 매칭에 사용)
   availableTimes: string[]; // 대략적인 시간대 (매칭 점수용, slots에서 계산)
@@ -86,6 +95,20 @@ export interface MentoringRequest {
   createdAt: string;
   price?: number; // 신청 당시의 이용료(원)
   summary?: LectureSummary;
+}
+
+// 완료된 멘토링 1건마다 학생이 후기를 1개 남길 수 있다
+export interface Review {
+  id: string;
+  requestId: string;
+  mentorId: string;
+  studentId: string;
+  studentLabel: string; // 익명 표시 ("강원 고1 학생")
+  rating: number; // 1~5
+  helpful: string[]; // 도움이 된 점
+  text: string;
+  createdAt: string;
+  sample?: boolean; // 시연용 예시 후기
 }
 
 // 멘토링 신청 1건마다 멘토·학생 1:1 채팅방이 하나 생긴다

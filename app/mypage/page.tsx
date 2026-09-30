@@ -34,7 +34,7 @@ const NEXT_ACTION: Partial<Record<RequestStatus, { label: string; next: RequestS
   scheduled: { label: "멘토링 완료", next: "completed" },
 };
 
-function RequestItem({ req, mentor, asMentor, unread }: { req: MentoringRequest; mentor?: Mentor; asMentor: boolean; unread: number }) {
+function RequestItem({ req, mentor, asMentor, unread, reviewed }: { req: MentoringRequest; mentor?: Mentor; asMentor: boolean; unread: number; reviewed: boolean }) {
   const action = NEXT_ACTION[req.status];
   return (
     <div className="card req">
@@ -56,6 +56,17 @@ function RequestItem({ req, mentor, asMentor, unread }: { req: MentoringRequest;
           <summary>📝 AI 수업 요약 보기</summary>
           <SummaryView summary={req.summary} />
         </details>
+      )}
+      {!asMentor && req.status === "completed" && (
+        <div className="req-actions">
+          {reviewed ? (
+            <span className="review-done">✓ 후기를 남겼어요</span>
+          ) : (
+            <Link href={`/review/${req.id}`} className="btn btn-sm">
+              ✍️ 후기 쓰기
+            </Link>
+          )}
+        </div>
       )}
       {(canChat(req) || (asMentor && action)) && (
         <div className="req-actions">
@@ -84,7 +95,7 @@ type Tab = "all" | "upcoming" | "done";
 
 export default function MyPage() {
   const router = useRouter();
-  const { ready, currentUser, myProfile, requests, allMentors, messages, lastRead } = useStore();
+  const { ready, currentUser, myProfile, requests, allMentors, messages, lastRead, allReviews } = useStore();
   const [tab, setTab] = useState<Tab>("all");
 
   useEffect(() => {
@@ -203,7 +214,7 @@ export default function MyPage() {
       ) : (
         <div className="req-list">
           {shown.map((r) => (
-            <RequestItem key={r.id} req={r} mentor={allMentors.find((m) => m.id === r.mentorId)} asMentor={isMentor} unread={unreadCount({ messages, lastRead }, r.id, currentUser.id)} />
+            <RequestItem key={r.id} req={r} mentor={allMentors.find((m) => m.id === r.mentorId)} asMentor={isMentor} unread={unreadCount({ messages, lastRead }, r.id, currentUser.id)} reviewed={allReviews.some((v) => v.requestId === r.id)} />
           ))}
         </div>
       )}

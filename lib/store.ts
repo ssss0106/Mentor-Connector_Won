@@ -4,8 +4,8 @@
 // 추후 Firebase/Supabase로 교체할 때 이 파일의 함수만 바꾸면 된다.
 
 import { useEffect, useState } from "react";
-import { SEED_MENTORS } from "./data";
-import type { ChatMessage, Mentor, MentoringRequest, RequestStatus, StudentProfile, User, Verification, LectureSummary } from "./types";
+import { SEED_MENTORS, SEED_REVIEWS } from "./data";
+import type { ChatMessage, Mentor, MentoringRequest, RequestStatus, StudentProfile, User, Verification, LectureSummary, Review } from "./types";
 
 const KEY = "mentor-connector:v1";
 const EVENT = "mentor-connector:change";
@@ -17,10 +17,11 @@ interface DB {
   mentors: Mentor[]; // 가입한 멘토 (시드 멘토는 별도)
   requests: MentoringRequest[];
   messages: ChatMessage[];
+  reviews: Review[];
   lastRead: Record<string, string>; // "userId:requestId" → 마지막으로 읽은 시각
 }
 
-const empty: DB = { users: [], currentUserId: null, profiles: [], mentors: [], requests: [], messages: [], lastRead: {} };
+const empty: DB = { users: [], currentUserId: null, profiles: [], mentors: [], requests: [], messages: [], reviews: [], lastRead: {} };
 
 function load(): DB {
   if (typeof window === "undefined") return empty;
@@ -201,6 +202,16 @@ export function saveSummary(id: string, summary: LectureSummary) {
   });
 }
 
+// ---------- 후기 ----------
+
+// 완료된 멘토링 1건에 후기는 1개만 남길 수 있다
+export function addReview(r: Omit<Review, "id" | "createdAt">) {
+  update((db) => {
+    if (db.reviews.some((x) => x.requestId === r.requestId)) return;
+    db.reviews.push({ ...r, id: uid("rv"), createdAt: new Date().toISOString() });
+  });
+}
+
 export function resetAll() {
   localStorage.removeItem(KEY);
   Object.keys(localStorage)
@@ -217,6 +228,7 @@ export interface StoreSnapshot extends DB {
   myProfile: StudentProfile | null;
   allMentors: Mentor[];
   visibleMentors: Mentor[]; // 경력 조회 완료 멘토
+  allReviews: Review[]; // 시연용 예시 후기 + 이 브라우저에서 남긴 후기
 }
 
 function snapshot(ready: boolean): StoreSnapshot {
@@ -229,6 +241,7 @@ function snapshot(ready: boolean): StoreSnapshot {
     myProfile: currentUser ? db.profiles.find((p) => p.userId === currentUser.id) ?? null : null,
     allMentors: getAllMentors(db),
     visibleMentors: getVisibleMentors(db),
+    allReviews: [...SEED_REVIEWS, ...db.reviews],
   };
 }
 

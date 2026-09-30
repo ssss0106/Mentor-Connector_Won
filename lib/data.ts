@@ -1,5 +1,5 @@
 import { sampleSlots } from "./schedule";
-import type { ConcernCategory, Mentor, RequestStatus, Verification, VerificationStatus } from "./types";
+import type { ConcernCategory, Mentor, RequestStatus, Review, Verification, VerificationStatus } from "./types";
 
 export const GRADES = ["중1", "중2", "중3", "고1", "고2", "고3"];
 export const MENTOR_GRADES = ["1학년", "2학년", "3학년", "4학년", "졸업생"];
@@ -31,6 +31,21 @@ export const TIMES = ["평일 오후", "평일 저녁", "주말 오전", "주말
 // 멘토링 비용: 모든 멘토 동일, 30분 1회 고정 (시연 화면이라 실제 결제는 하지 않는다)
 export const SESSION_PRICE = 7000;
 export const formatPrice = (n: number) => `${n.toLocaleString("ko-KR")}원`;
+
+// 입시 전형 (멘토는 본인이 거친 전형, 학생은 준비하는 전형)
+export const ADMISSION_PATHS = ["수시 · 학생부교과", "수시 · 학생부종합", "수시 · 논술", "수시 · 실기·특기자", "정시", "기타"];
+export const GPA_SCALES = [4.5, 4.3, 4.0];
+
+// 후기 평균 별점은 후기가 이 개수 이상일 때부터 보여준다 (후기 하나로 멘토가 평가되지 않게)
+export const MIN_REVIEWS_FOR_AVERAGE = 2;
+export const REVIEW_TAGS = [
+  "전공 이해가 됐어요",
+  "대학 선택에 도움이 됐어요",
+  "현실적인 이야기를 들었어요",
+  "고민이 정리됐어요",
+  "질문에 친절하게 답해줬어요",
+  "다음에 할 일이 생겼어요",
+];
 
 export const METHODS = ["온라인 화상", "온라인 채팅"];
 
@@ -65,6 +80,11 @@ const RAW_MENTORS: Mentor[] = [
       "중학생 때 진로를 정하지 못해 오래 고민했어요. 고2 때 청소년 상담 봉사를 하면서 아동청소년학이라는 전공을 알게 됐고, 지금은 청소년 교육 프로그램을 기획하는 일을 꿈꾸고 있어요.",
     intro: "중학생 때 진로를 결정하기 어려웠던 경험을 바탕으로 편하게 이야기해드릴게요.",
     hometown: "충남",
+    admission: {
+      path: "수시 · 학생부종합",
+      highSchoolGrade: 2.48,
+      collegeGpa: { value: 4.12, scale: 4.5 },
+    },
     insight: {
       satisfaction: 4,
       unknownBefore: "상담만 배우는 줄 알았는데 발달심리·교육 이론과 통계·연구방법 수업이 많았어요.",
@@ -87,6 +107,11 @@ const RAW_MENTORS: Mentor[] = [
       "강원도 일반고 출신이에요. 심리학과에 대한 정보가 거의 없어서 혼자 찾아봤던 경험이 있어요. 임상·상담·인지 등 심리학 세부 분야와 대학원 진로까지 알려드릴 수 있어요.",
     intro: "심리학과가 실제로 뭘 배우는지, 솔직하게 알려드릴게요.",
     hometown: "강원",
+    admission: {
+      path: "수시 · 학생부종합",
+      highSchoolGrade: 2.15,
+      collegeGpa: { value: 3.88, scale: 4.3 },
+    },
     insight: {
       satisfaction: 4,
       unknownBefore: "상담 수업만 있는 게 아니라 통계와 실험 설계 수업 비중이 커요.",
@@ -109,6 +134,10 @@ const RAW_MENTORS: Mentor[] = [
       "고1 때 성적이 크게 떨어진 뒤 공부 습관을 처음부터 다시 만들었어요. 플래너 쓰는 법, 오답노트 정리법 등 제가 직접 효과 본 방법을 공유해요.",
     intro: "공부가 막막할 때, 작은 습관부터 같이 만들어봐요.",
     hometown: "전남",
+    admission: {
+      path: "수시 · 학생부종합",
+      highSchoolGrade: 1.62,
+    },
     insight: {
       satisfaction: 4,
       unknownBefore: "교육학과는 곧바로 교사가 되는 과정이 아니라 교육 이론·정책·상담을 폭넓게 배워요.",
@@ -131,6 +160,11 @@ const RAW_MENTORS: Mentor[] = [
       "고등학교 때 독학으로 코딩을 시작해 정보올림피아드에 나갔어요. 개발자라는 직업과 컴퓨터공학 전공 공부가 실제로 어떤지 이야기해 드릴 수 있어요.",
     intro: "개발자가 되고 싶다면, 지금 할 수 있는 것부터 알려줄게요.",
     hometown: "경북",
+    admission: {
+      path: "기타",
+      highSchoolGrade: 2.9,
+      collegeGpa: { value: 3.71, scale: 4.3 },
+    },
     insight: {
       satisfaction: 4,
       unknownBefore: "코딩만 하는 게 아니라 이산수학·선형대수 같은 수학과 알고리즘 이론 비중이 커요.",
@@ -153,6 +187,11 @@ const RAW_MENTORS: Mentor[] = [
       "창업 동아리와 공모전 활동을 많이 했어요. 문과 진로가 막연하게 느껴지는 친구들에게 경영학과에서 할 수 있는 다양한 길을 소개해요.",
     intro: "대학생활을 알차게 보내는 법, 선배가 다 알려줄게요.",
     hometown: "수도권",
+    admission: {
+      path: "정시",
+      highSchoolGrade: 2.74,
+      collegeGpa: { value: 3.95, scale: 4.5 },
+    },
     insight: {
       satisfaction: 4,
       unknownBefore: "발표와 팀 프로젝트가 정말 많아요. 혼자 공부만 잘해서는 부족해요.",
@@ -176,6 +215,11 @@ const RAW_MENTORS: Mentor[] = [
       "강원도에서 나고 자라 지역 대학 간호학과에 진학했어요. 실습 생활, 국가고시 준비, 보건의료 계열 진로를 현실적으로 알려드려요.",
     intro: "보건의료 계열 진로, 지역 대학 진학 이야기 궁금하면 물어보세요.",
     hometown: "강원",
+    admission: {
+      path: "수시 · 학생부교과",
+      highSchoolGrade: 2.31,
+      collegeGpa: { value: 4.05, scale: 4.5 },
+    },
     insight: {
       satisfaction: 4,
       unknownBefore: "이론 수업만이 아니라 3학년부터는 병원 실습이 중심이고 체력이 많이 필요해요.",
@@ -198,6 +242,10 @@ const RAW_MENTORS: Mentor[] = [
       "학원 없이 영어 성적을 올린 경험이 있어요. 영어 공부법과 어문 계열 전공, 교환학생 준비 과정까지 이야기해 드려요.",
     intro: "영어 공부가 어렵다면, 제가 썼던 방법을 그대로 알려줄게요.",
     hometown: "경남",
+    admission: {
+      path: "수시 · 학생부종합",
+      highSchoolGrade: 2.08,
+    },
     insight: {
       satisfaction: 4,
       unknownBefore: "영어를 잘하는 것만으로는 부족하고, 통번역은 한국어 표현력이 훨씬 중요해요.",
@@ -220,6 +268,11 @@ const RAW_MENTORS: Mentor[] = [
       "수학을 싫어했지만 로봇이 좋아서 공대에 왔어요. 이과 과목 공부 동기를 잃었을 때 다시 잡은 경험과 공대 생활을 들려드려요.",
     intro: "공대가 궁금한 친구, 편하게 질문하세요!",
     hometown: "대구",
+    admission: {
+      path: "정시",
+      highSchoolGrade: 3.42,
+      collegeGpa: { value: 3.5, scale: 4.5 },
+    },
     insight: {
       satisfaction: 3,
       unknownBefore: "이론 과목(열역학·재료역학)이 많아서 로봇을 만드는 시간은 기대보다 적어요.",
@@ -242,6 +295,11 @@ const RAW_MENTORS: Mentor[] = [
       "충북의 작은 도시에서 학원 없이 인터넷 강의와 교과서로 화학·생명과학을 공부했어요. 약사가 하는 일이 병원·제약회사·연구까지 생각보다 넓다는 걸 대학에 와서 알게 됐어요. 보건의료 계열 진로가 막막한 친구들에게 현실적인 이야기를 해드릴게요.",
     intro: "약사라는 직업, 학교에서는 안 알려주는 이야기까지 들려드릴게요.",
     hometown: "충북",
+    admission: {
+      path: "수시 · 학생부교과",
+      highSchoolGrade: 1.38,
+      collegeGpa: { value: 3.9, scale: 4.5 },
+    },
     insight: {
       satisfaction: 4,
       unknownBefore: "약을 만드는 것만 하는 게 아니라 복약지도와 병원·제약·연구 등 진로가 다양해요.",
@@ -264,6 +322,10 @@ const RAW_MENTORS: Mentor[] = [
       "전남 시골 마을에서 자라 동물을 좋아했지만 수의사가 되는 길을 알려줄 사람이 없었어요. 생명과학 공부법과 수의대 공부·실습 생활, 졸업 후 진로(동물병원·연구·공공부문)를 있는 그대로 알려드려요.",
     intro: "동물을 좋아하는 친구라면, 수의대의 진짜 모습을 알려줄게요.",
     hometown: "전남",
+    admission: {
+      path: "수시 · 학생부교과",
+      highSchoolGrade: 1.29,
+    },
     insight: {
       satisfaction: 5,
       unknownBefore: "동물병원 임상만이 아니라 공공방역·연구·산업동물 등 진로가 넓어요.",
@@ -286,6 +348,11 @@ const RAW_MENTORS: Mentor[] = [
       "부산 일반고에 다닐 때 코딩 수업이 거의 없어서 유튜브와 무료 강의로 독학했어요. 학과 동아리와 해커톤에 참여하면서 수도권이 아니어도 개발 경험을 쌓을 수 있다는 걸 알게 됐어요.",
     intro: "지방에서도 개발자의 길은 열려 있어요. 제가 걸어온 방법을 알려드릴게요.",
     hometown: "부산",
+    admission: {
+      path: "수시 · 학생부교과",
+      highSchoolGrade: 2.05,
+      collegeGpa: { value: 4.21, scale: 4.5 },
+    },
     insight: {
       satisfaction: 5,
       unknownBefore: "혼자 하던 코딩과 달리 자료구조·알고리즘 같은 이론 수업이 큰 비중이에요.",
@@ -309,6 +376,10 @@ const RAW_MENTORS: Mentor[] = [
       "제주에서 나고 자라 섬 밖 대학과 진로 정보를 얻기 어려웠어요. 제주에 남을지 육지로 나갈지 오래 고민했고, 지금은 지역 대학에서 관광·서비스 분야 인턴과 교환학생을 경험하고 있어요.",
     intro: "섬을 떠날지 남을지 고민된다면, 제 고민 과정을 나눠드릴게요.",
     hometown: "제주",
+    admission: {
+      path: "수시 · 학생부교과",
+      highSchoolGrade: 3.18,
+    },
     insight: {
       satisfaction: 4,
       unknownBefore: "관광이 여행만 다루는 게 아니라 마케팅·회계·서비스 경영을 함께 배워요.",
@@ -331,6 +402,11 @@ const RAW_MENTORS: Mentor[] = [
       "전북 일반고에서 국어 성적이 잘 오르지 않아 독서와 글쓰기 습관부터 다시 만들었어요. 국문과에서 배우는 것, 교사·출판·콘텐츠 등 문과 진로를 구체적으로 알려드려요.",
     intro: "문과가 취업이 걱정되는 친구, 국문과 선배와 이야기해봐요.",
     hometown: "전북",
+    admission: {
+      path: "수시 · 학생부종합",
+      highSchoolGrade: 2.87,
+      collegeGpa: { value: 4.3, scale: 4.5 },
+    },
     insight: {
       satisfaction: 4,
       unknownBefore: "문학 감상만이 아니라 언어학·국어사 같은 이론 과목도 많아요.",
@@ -354,6 +430,10 @@ const RAW_MENTORS: Mentor[] = [
       "그림 그리기와 수학을 둘 다 좋아해서 건축을 알게 됐어요. 지방 고등학교에는 건축 정보가 거의 없어서 직접 조사했고, 지금은 설계 스튜디오 수업과 밤샘 과제까지 학과 생활을 솔직하게 들려드려요.",
     intro: "건축과가 궁금하다면, 스튜디오 생활까지 솔직하게 말해줄게요.",
     hometown: "경북",
+    admission: {
+      path: "수시 · 학생부교과",
+      highSchoolGrade: 2.22,
+    },
     insight: {
       satisfaction: 3,
       unknownBefore: "설계 스튜디오 과제가 많아 밤샘이 일상이고, 수학·구조 과목도 꽤 있어요.",
@@ -376,6 +456,11 @@ const RAW_MENTORS: Mentor[] = [
       "대전에서 미술 입시를 준비했는데 지역에는 입시 정보와 좋은 학원이 부족해서 온라인으로 포트폴리오를 준비했어요. 예체능 입시 준비 과정과 디자인 전공 생활, 공모전 경험을 알려드려요.",
     intro: "예체능 입시, 정보가 없어 막막했던 제 경험을 나눠요.",
     hometown: "대전",
+    admission: {
+      path: "수시 · 실기·특기자",
+      highSchoolGrade: 4.35,
+      collegeGpa: { value: 3.72, scale: 4.5 },
+    },
     insight: {
       satisfaction: 4,
       unknownBefore: "감각만으로 되는 게 아니라 작업의 이유를 설명하고 발표하는 연습이 많아요.",
@@ -398,6 +483,11 @@ const RAW_MENTORS: Mentor[] = [
       "울산에서 자라 조선소와 공장이 익숙했지만 이게 공학이라는 걸 대학에 와서야 알았어요. 이과 과목이 어렵다고 느낄 때 공부 동기를 잡은 경험과 지역 산업과 연결된 공학 진로를 알려드려요.",
     intro: "우리 지역 산업이 곧 내 진로가 될 수 있어요.",
     hometown: "울산",
+    admission: {
+      path: "수시 · 학생부교과",
+      highSchoolGrade: 3.05,
+      collegeGpa: { value: 3.66, scale: 4.5 },
+    },
     insight: {
       satisfaction: 4,
       unknownBefore: "배만 만드는 게 아니라 유체·구조·재료 이론을 폭넓게 배워요.",
@@ -420,6 +510,10 @@ const RAW_MENTORS: Mentor[] = [
       "충북 청주의 일반고를 졸업했고 법조계에 아는 사람이 한 명도 없었어요. 법학과에서 배우는 내용과 법조인·공무원·기업 법무 등 진로, 긴 글을 읽고 정리하는 공부법을 알려드려요.",
     intro: "주변에 법 쪽으로 물어볼 사람이 없다면 저에게 물어보세요.",
     hometown: "충북",
+    admission: {
+      path: "정시",
+      highSchoolGrade: 1.95,
+    },
     insight: {
       satisfaction: 3,
       unknownBefore: "판례와 법 조문을 읽는 양이 엄청나고, 드라마 속 법정 장면과는 많이 달라요.",
@@ -443,6 +537,11 @@ const RAW_MENTORS: Mentor[] = [
       "강원도 소도시에는 코딩 학원이 없어서 온라인으로 혼자 배웠어요. 지역 대학 동아리와 프로젝트에서 팀 개발을 처음 경험했고, 지금은 지방대에서 개발자를 준비하는 현실적인 방법을 나눠요.",
     intro: "학원 없이도 코딩을 시작할 수 있어요. 첫걸음부터 알려드릴게요.",
     hometown: "강원",
+    admission: {
+      path: "수시 · 학생부종합",
+      highSchoolGrade: 3.44,
+      collegeGpa: { value: 4.02, scale: 4.5 },
+    },
     insight: {
       satisfaction: 4,
       unknownBefore: "코딩만이 아니라 수학, 팀 협업, 문서 정리가 큰 비중을 차지해요.",
@@ -465,6 +564,10 @@ const RAW_MENTORS: Mentor[] = [
       "경남 작은 도시에서 자라 초등학교 선생님을 꿈꿨어요. 교대에 가는 과정, 교대의 수업과 교생실습 생활, 교사라는 직업의 장단점을 현실적으로 알려드려요.",
     intro: "선생님이 꿈이라면 교대 생활이 어떤지 알려드릴게요.",
     hometown: "경남",
+    admission: {
+      path: "수시 · 학생부교과",
+      highSchoolGrade: 2.36,
+    },
     insight: {
       satisfaction: 4,
       unknownBefore: "교대는 대부분 교사가 되는 과정이라 전공 선택 폭이 좁고, 전 과목을 골고루 배워요.",
@@ -487,6 +590,11 @@ const RAW_MENTORS: Mentor[] = [
       "경북 시골 학교에서 수학이 재미있어서 혼자 문제를 파고들었어요. 수학과에서 배우는 것과 대학원 진학, 데이터·금융 분야로 이어지는 진로, 수학 공부 동기를 유지하는 방법을 알려드려요.",
     intro: "수학이 어렵다가도 좋아지는 순간, 저는 이렇게 만났어요.",
     hometown: "경북",
+    admission: {
+      path: "수시 · 학생부종합",
+      highSchoolGrade: 1.87,
+      collegeGpa: { value: 3.95, scale: 4.3 },
+    },
     insight: {
       satisfaction: 5,
       unknownBefore: "계산이 아니라 증명 중심이라 고등학교 수학과는 완전히 달라요.",
@@ -509,6 +617,11 @@ const RAW_MENTORS: Mentor[] = [
       "대전에서 자랐고 경제 뉴스가 어려워서 흥미가 없었지만 학교 경제 동아리에서 시작해 관심이 생겼어요. 경제학과에서 배우는 것, 금융·공기업·대학원 진로, 꾸준히 공부하는 습관 만드는 법을 알려드려요.",
     intro: "경제가 어렵게만 느껴졌던 제가 경제학과에 온 이유를 들려드려요.",
     hometown: "대전",
+    admission: {
+      path: "수시 · 논술",
+      highSchoolGrade: 2.53,
+      collegeGpa: { value: 4.18, scale: 4.5 },
+    },
     insight: {
       satisfaction: 4,
       unknownBefore: "경제 뉴스가 아니라 수학 모델과 통계를 쓰는 학문이에요.",
@@ -532,6 +645,11 @@ const RAW_MENTORS: Mentor[] = [
       "광주에서 자랐고 운동선수를 하다 다친 경험으로 물리치료를 알게 됐어요. 의료계열이지만 의대·간호대와는 다른 물리치료사의 일, 학과 생활, 국가시험과 취업까지 알려드려요.",
     intro: "의료 쪽에 관심 있다면, 의대·간호 말고도 길이 많다는 걸 알려줄게요.",
     hometown: "광주",
+    admission: {
+      path: "수시 · 학생부교과",
+      highSchoolGrade: 3.62,
+      collegeGpa: { value: 3.85, scale: 4.5 },
+    },
     insight: {
       satisfaction: 4,
       unknownBefore: "운동을 가르치는 것만이 아니라 해부학·생리학 같은 의학 이론 과목이 많아요.",
@@ -554,6 +672,10 @@ const RAW_MENTORS: Mentor[] = [
       "강원도에서 운동부 생활을 하며 공부와 운동을 병행하는 게 가장 큰 고민이었어요. 운동을 하면서도 학업을 이어가는 법, 체육교사와 스포츠 분야 진로를 알려드려요.",
     intro: "운동과 공부, 둘 다 놓치고 싶지 않은 친구에게 도움이 될게요.",
     hometown: "강원",
+    admission: {
+      path: "수시 · 실기·특기자",
+      highSchoolGrade: 3.9,
+    },
     insight: {
       satisfaction: 4,
       unknownBefore: "운동만 잘하는 게 아니라 교육학·운동 이론 수업과 교육실습 비중이 커요.",
@@ -576,6 +698,10 @@ const RAW_MENTORS: Mentor[] = [
       "전북 전주에서 음악을 하고 싶었지만 주변에서 걱정하는 분들이 많았어요. 실용음악 입시 준비 과정, 대학에서의 실기와 이론 수업, 음악으로 할 수 있는 다양한 직업을 알려드려요.",
     intro: "음악이 하고 싶은데 부모님께 말하기 어렵다면 같이 이야기해요.",
     hometown: "전북",
+    admission: {
+      path: "수시 · 실기·특기자",
+      highSchoolGrade: 4.71,
+    },
     insight: {
       satisfaction: 4,
       unknownBefore: "연주만 하는 게 아니라 이론·청음·음악 산업 수업 비중도 커요.",
@@ -590,3 +716,22 @@ const RAW_MENTORS: Mentor[] = [
 
 // 시드 멘토의 주간 시간표는 대략적인 시간대에서 예시로 만든다
 export const SEED_MENTORS: Mentor[] = RAW_MENTORS.map((m) => ({ ...m, slots: sampleSlots(m.availableTimes) }));
+
+// 시연용 예시 후기 (실제 이용자 후기가 아님). 화면에도 "예시"로 표시한다.
+export const SEED_REVIEWS: Review[] = [
+  { id: "sr1", requestId: "sample", mentorId: "m2", studentId: "sample", studentLabel: "강원 고1 학생", rating: 5, helpful: ["전공 이해가 됐어요", "현실적인 이야기를 들었어요"], text: "심리학과에서 통계를 이렇게 많이 배우는 줄 몰랐어요. 솔직하게 알려주셔서 진로 생각이 구체적으로 바뀌었어요.", createdAt: "2026-09-14T09:00:00.000Z", sample: true },
+  { id: "sr2", requestId: "sample", mentorId: "m2", studentId: "sample", studentLabel: "전남 고2 학생", rating: 5, helpful: ["대학 선택에 도움이 됐어요", "고민이 정리됐어요"], text: "같은 지역 출신이라 제 고민을 바로 이해해 주셨어요. 대학을 고르는 기준이 생겼어요.", createdAt: "2026-09-17T09:00:00.000Z", sample: true },
+  { id: "sr3", requestId: "sample", mentorId: "m2", studentId: "sample", studentLabel: "경북 고1 학생", rating: 4, helpful: ["질문에 친절하게 답해줬어요"], text: "30분이 조금 짧았지만 궁금한 건 다 물어봤어요.", createdAt: "2026-09-21T09:00:00.000Z", sample: true },
+  { id: "sr4", requestId: "sample", mentorId: "m2", studentId: "sample", studentLabel: "충북 중3 학생", rating: 5, helpful: ["다음에 할 일이 생겼어요", "전공 이해가 됐어요"], text: "심리학 세부 분야를 알려주셔서 뭘 더 찾아봐야 할지 알게 됐어요.", createdAt: "2026-09-25T09:00:00.000Z", sample: true },
+  { id: "sr5", requestId: "sample", mentorId: "m1", studentId: "sample", studentLabel: "충남 고2 학생", rating: 5, helpful: ["고민이 정리됐어요"], text: "진로를 못 정해서 막막했는데 선배도 같은 고민을 했다는 얘기에 위로가 됐어요.", createdAt: "2026-09-12T09:00:00.000Z", sample: true },
+  { id: "sr6", requestId: "sample", mentorId: "m1", studentId: "sample", studentLabel: "강원 고1 학생", rating: 4, helpful: ["현실적인 이야기를 들었어요"], text: "청소년 교육 쪽 진로를 구체적으로 들어볼 수 있었어요.", createdAt: "2026-09-19T09:00:00.000Z", sample: true },
+  { id: "sr7", requestId: "sample", mentorId: "m1", studentId: "sample", studentLabel: "경남 중3 학생", rating: 5, helpful: ["질문에 친절하게 답해줬어요", "다음에 할 일이 생겼어요"], text: "제 이야기를 끝까지 들어주시고 해볼 만한 활동도 알려주셨어요.", createdAt: "2026-09-26T09:00:00.000Z", sample: true },
+  { id: "sr8", requestId: "sample", mentorId: "m5", studentId: "sample", studentLabel: "경북 고2 학생", rating: 4, helpful: ["대학 선택에 도움이 됐어요"], text: "경영학과가 하는 일이 넓다는 걸 알게 됐어요. 전공을 옮긴 이야기가 특히 도움이 됐어요.", createdAt: "2026-09-10T09:00:00.000Z", sample: true },
+  { id: "sr9", requestId: "sample", mentorId: "m5", studentId: "sample", studentLabel: "전북 고1 학생", rating: 5, helpful: ["현실적인 이야기를 들었어요", "전공 이해가 됐어요"], text: "팀 프로젝트가 많다는 이야기를 듣고 학과 생활이 그려졌어요.", createdAt: "2026-09-18T09:00:00.000Z", sample: true },
+  { id: "sr10", requestId: "sample", mentorId: "m5", studentId: "sample", studentLabel: "제주 고2 학생", rating: 4, helpful: ["고민이 정리됐어요"], text: "막연했던 문과 진로가 조금 정리됐어요.", createdAt: "2026-09-24T09:00:00.000Z", sample: true },
+  { id: "sr11", requestId: "sample", mentorId: "m6", studentId: "sample", studentLabel: "강원 고2 학생", rating: 5, helpful: ["현실적인 이야기를 들었어요", "전공 이해가 됐어요"], text: "간호학과 실습이 어떤지 솔직하게 알려주셔서 진학 결정에 큰 도움이 됐어요.", createdAt: "2026-09-15T09:00:00.000Z", sample: true },
+  { id: "sr12", requestId: "sample", mentorId: "m6", studentId: "sample", studentLabel: "충북 고3 학생", rating: 4, helpful: ["대학 선택에 도움이 됐어요"], text: "지역 대학 간호학과를 고민 중이었는데 생활 이야기를 들을 수 있어서 좋았어요.", createdAt: "2026-09-22T09:00:00.000Z", sample: true },
+  { id: "sr13", requestId: "sample", mentorId: "m3", studentId: "sample", studentLabel: "전남 고1 학생", rating: 5, helpful: ["질문에 친절하게 답해줬어요"], text: "교육학과가 교사가 되는 과정이 아니라는 걸 처음 알았어요.", createdAt: "2026-09-20T09:00:00.000Z", sample: true },
+  { id: "sr14", requestId: "sample", mentorId: "m11", studentId: "sample", studentLabel: "부산 고2 학생", rating: 5, helpful: ["다음에 할 일이 생겼어요", "전공 이해가 됐어요"], text: "전공을 바꾼 이유와 과정을 들으니 저도 용기가 났어요. 무료 강의부터 시작해 보기로 했어요.", createdAt: "2026-09-16T09:00:00.000Z", sample: true },
+  { id: "sr15", requestId: "sample", mentorId: "m11", studentId: "sample", studentLabel: "울산 고1 학생", rating: 4, helpful: ["현실적인 이야기를 들었어요"], text: "동기와 비교돼서 힘들었다는 이야기가 기억에 남아요.", createdAt: "2026-09-23T09:00:00.000Z", sample: true },
+];
