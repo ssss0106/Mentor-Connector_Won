@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from "react";
 import { SEED_MENTORS } from "./data";
-import type { Mentor, MentoringRequest, RequestStatus, StudentProfile, User, Verification } from "./types";
+import type { ChatMessage, Mentor, MentoringRequest, RequestStatus, StudentProfile, User, Verification } from "./types";
 
 const KEY = "mentor-connector:v1";
 const EVENT = "mentor-connector:change";
@@ -16,9 +16,11 @@ interface DB {
   profiles: StudentProfile[];
   mentors: Mentor[]; // 가입한 멘토 (시드 멘토는 별도)
   requests: MentoringRequest[];
+  messages: ChatMessage[];
+  lastRead: Record<string, string>; // "userId:requestId" → 마지막으로 읽은 시각
 }
 
-const empty: DB = { users: [], currentUserId: null, profiles: [], mentors: [], requests: [] };
+const empty: DB = { users: [], currentUserId: null, profiles: [], mentors: [], requests: [], messages: [], lastRead: {} };
 
 function load(): DB {
   if (typeof window === "undefined") return empty;
@@ -147,6 +149,34 @@ export function reviewVerification(mentorId: string, approve: boolean, rejectRea
     reviewedAt: new Date().toISOString(),
     rejectReason: approve ? undefined : rejectReason,
   }));
+}
+
+// ---------- 채팅 ----------
+
+// 멘토가 승인한 뒤부터 채팅할 수 있다
+export const canChat = (req: MentoringRequest) => req.status !== "pending";
+
+export function sendMessage(requestId: string, sender: User, text: string) {
+  const now = new Date().toISOString();
+  update((db) => {
+    db.messages.push({ id: uid("c"), requestId, senderId: sender.id, senderName: sender.name, text, createdAt: now });
+    db.lastRead[`${sender.id}:${requestId}`] = now;
+  });
+}
+
+export function markChatRead(requestId: string, userId: string) {
+  const key = `${userId}:${requestId}`;
+  const db = load();
+  const last = db.messages.filter((m) => m.requestId === requestId).at(-1);
+  if (!last || (db.lastRead[key] ?? "") >= last.createdAt) return;
+  update((d) => {
+    d.lastRead[key] = new Date().toISOString();
+  });
+}
+
+export function unreadCount(db: Pick<DB, "messages" | "lastRead">, requestId: string, userId: string): number {
+  const since = db.lastRead[`${userId}:${requestId}`] ?? "";
+  return db.messages.filter((m) => m.requestId === requestId && m.senderId !== userId && m.createdAt > since).length;
 }
 
 // ---------- 멘토링 신청 ----------

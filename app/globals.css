@@ -290,6 +290,30 @@ main { min-height: calc(100vh - 140px); }
 .side-box .textarea { background: #15161d; border-color: #3a3d4c; color: #fff; min-height: 160px; }
 .demo-note { font-size: 12px; color: #9a9db0; margin: 0; }
 
+/* ---------- 채팅 ---------- */
+.chat-page { display: flex; flex-direction: column; gap: 12px; }
+.chat-head { display: flex; align-items: center; gap: 12px; padding: 14px 18px; }
+.chat-back { font-size: 20px; color: var(--muted); padding: 0 4px; }
+.chat-head-info { flex: 1; display: flex; flex-direction: column; }
+.chat-notice { font-size: 13px; background: #fff8f2; color: #a3541c; padding: 10px 14px; border-radius: 12px; line-height: 1.6; }
+.chat-notice .muted { font-size: 12px; }
+.chat-log { display: flex; flex-direction: column; gap: 14px; min-height: 360px; max-height: 60vh; overflow-y: auto; padding: 20px; background: #fbfbfe; }
+.chat-bubble-wrap { display: flex; flex-direction: column; max-width: 78%; gap: 4px; }
+.chat-bubble-wrap.me { align-self: flex-end; align-items: flex-end; }
+.chat-bubble-wrap.them { align-self: flex-start; align-items: flex-start; }
+.chat-bubble { padding: 10px 14px; border-radius: 16px; font-size: 15px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+.me .chat-bubble { background: var(--primary); color: #fff; border-bottom-right-radius: 4px; }
+.them .chat-bubble { background: #fff; border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+.chat-first { background: var(--primary-soft) !important; border-color: transparent !important; }
+.chat-first-label { font-size: 12px; font-weight: 700; color: var(--primary); margin-bottom: 4px; }
+.chat-meta { font-size: 12px; color: var(--muted); }
+.chat-empty { text-align: center; margin: auto 0; }
+.chat-input { display: flex; gap: 8px; align-items: stretch; }
+.chat-input .textarea { min-height: 52px; height: 52px; resize: none; }
+.chat-warn { font-size: 13px; color: #a36b00; }
+.chat-btn { display: inline-flex; align-items: center; gap: 6px; }
+.unread { background: #d92d20; color: #fff; font-size: 11px; font-weight: 800; border-radius: 999px; padding: 1px 7px; }
+
 @media (max-width: 760px) {
   .room-body { grid-template-columns: 1fr; }
   .tile-main { min-height: 320px; }

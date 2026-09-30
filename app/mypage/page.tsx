@@ -7,7 +7,7 @@ import StatusBadge from "@/components/StatusBadge";
 import VerificationBadge from "@/components/VerificationBadge";
 import { STATUS_LABEL } from "@/lib/data";
 import { formatSession } from "@/lib/schedule";
-import { resetAll, setRequestStatus, useStore } from "@/lib/store";
+import { canChat, resetAll, setRequestStatus, unreadCount, useStore } from "@/lib/store";
 import type { Mentor, MentoringRequest, RequestStatus } from "@/lib/types";
 
 const FLOW: RequestStatus[] = ["pending", "approved", "scheduled", "completed"];
@@ -33,7 +33,7 @@ const NEXT_ACTION: Partial<Record<RequestStatus, { label: string; next: RequestS
   scheduled: { label: "멘토링 완료", next: "completed" },
 };
 
-function RequestItem({ req, mentor, asMentor }: { req: MentoringRequest; mentor?: Mentor; asMentor: boolean }) {
+function RequestItem({ req, mentor, asMentor, unread }: { req: MentoringRequest; mentor?: Mentor; asMentor: boolean; unread: number }) {
   const action = NEXT_ACTION[req.status];
   return (
     <div className="card req">
@@ -49,8 +49,13 @@ function RequestItem({ req, mentor, asMentor }: { req: MentoringRequest; mentor?
       </div>
       <p className="req-msg">{req.message}</p>
       <StatusFlow status={req.status} />
-      {(req.status === "scheduled" || (asMentor && action)) && (
+      {(canChat(req) || (asMentor && action)) && (
         <div className="req-actions">
+          {canChat(req) && (
+            <Link href={`/chat/${req.id}`} className="btn btn-sm btn-ghost chat-btn">
+              💬 채팅{unread > 0 && <span className="unread">{unread}</span>}
+            </Link>
+          )}
           {req.status === "scheduled" && (
             <Link href={`/room/${req.id}`} className="btn btn-sm btn-video">
               🎥 화상 멘토링 입장
@@ -71,7 +76,7 @@ type Tab = "all" | "upcoming" | "done";
 
 export default function MyPage() {
   const router = useRouter();
-  const { ready, currentUser, myProfile, requests, allMentors } = useStore();
+  const { ready, currentUser, myProfile, requests, allMentors, messages, lastRead } = useStore();
   const [tab, setTab] = useState<Tab>("all");
 
   useEffect(() => {
@@ -190,7 +195,7 @@ export default function MyPage() {
       ) : (
         <div className="req-list">
           {shown.map((r) => (
-            <RequestItem key={r.id} req={r} mentor={allMentors.find((m) => m.id === r.mentorId)} asMentor={isMentor} />
+            <RequestItem key={r.id} req={r} mentor={allMentors.find((m) => m.id === r.mentorId)} asMentor={isMentor} unread={unreadCount({ messages, lastRead }, r.id, currentUser.id)} />
           ))}
         </div>
       )}
