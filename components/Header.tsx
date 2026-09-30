@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { logout, useStore } from "@/lib/store";
+import ChatMenu from "./ChatMenu";
 
 export default function Header() {
   const { currentUser } = useStore();
@@ -18,6 +19,7 @@ export default function Header() {
           {currentUser ? (
             <>
               <Link href="/mypage">마이페이지</Link>
+              <ChatMenu />
               <button
                 className="link-btn"
                 onClick={() => {
