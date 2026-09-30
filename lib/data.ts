@@ -1,5 +1,5 @@
 import { sampleSlots } from "./schedule";
-import type { ConcernCategory, Mentor, RequestStatus, Review, Verification, VerificationStatus } from "./types";
+import type { ConcernCategory, Enrollment, Mentor, RequestStatus, Review, Verification, VerificationStatus } from "./types";
 
 export const GRADES = ["중1", "중2", "중3", "고1", "고2", "고3"];
 export const MENTOR_GRADES = ["1학년", "2학년", "3학년", "4학년", "졸업생"];
@@ -56,6 +56,13 @@ export const STATUS_LABEL: Record<RequestStatus, string> = {
   completed: "완료",
 };
 
+export const ENROLLMENT_LABEL: Record<VerificationStatus, string> = {
+  not_submitted: "재학 서류 미제출",
+  pending: "재학 확인 대기",
+  approved: "재학 인증 완료",
+  rejected: "재학 인증 반려",
+};
+
 export const VERIFICATION_LABEL: Record<VerificationStatus, string> = {
   not_submitted: "서류 미제출",
   pending: "확인 대기",
@@ -65,6 +72,7 @@ export const VERIFICATION_LABEL: Record<VerificationStatus, string> = {
 
 // 시연용 가상 멘토는 경력 조회가 끝난 상태로 둔다
 const SEED_VERIFIED: Verification = { status: "approved", reviewedAt: "2026-09-28T09:00:00.000Z" };
+const SEED_ENROLLED: Enrollment = { status: "approved", reviewedAt: "2026-09-28T09:00:00.000Z" };
 
 // 시연용 가상 멘토 데이터 (실제 인물이 아님)
 const RAW_MENTORS: Mentor[] = [
@@ -94,6 +102,7 @@ const RAW_MENTORS: Mentor[] = [
     availableTimes: ["평일 저녁", "주말 오후"],
     online: true,
     verification: SEED_VERIFIED,
+    enrollment: SEED_ENROLLED,
   },
   {
     id: "m2",
@@ -121,6 +130,7 @@ const RAW_MENTORS: Mentor[] = [
     availableTimes: ["평일 저녁", "주말 오전"],
     online: true,
     verification: SEED_VERIFIED,
+    enrollment: SEED_ENROLLED,
   },
   {
     id: "m3",
@@ -147,6 +157,7 @@ const RAW_MENTORS: Mentor[] = [
     availableTimes: ["평일 오후", "주말 오후"],
     online: true,
     verification: SEED_VERIFIED,
+    enrollment: SEED_ENROLLED,
   },
   {
     id: "m4",
@@ -174,6 +185,7 @@ const RAW_MENTORS: Mentor[] = [
     availableTimes: ["평일 저녁", "주말 저녁"],
     online: true,
     verification: SEED_VERIFIED,
+    enrollment: SEED_ENROLLED,
   },
   {
     id: "m5",
@@ -202,6 +214,7 @@ const RAW_MENTORS: Mentor[] = [
     availableTimes: ["주말 오전", "주말 오후"],
     online: true,
     verification: SEED_VERIFIED,
+    enrollment: SEED_ENROLLED,
   },
   {
     id: "m6",
@@ -229,6 +242,7 @@ const RAW_MENTORS: Mentor[] = [
     availableTimes: ["평일 오후", "평일 저녁"],
     online: true,
     verification: SEED_VERIFIED,
+    enrollment: SEED_ENROLLED,
   },
   {
     id: "m7",
@@ -255,6 +269,7 @@ const RAW_MENTORS: Mentor[] = [
     availableTimes: ["주말 오후", "주말 저녁"],
     online: true,
     verification: SEED_VERIFIED,
+    enrollment: SEED_ENROLLED,
   },
   {
     id: "m8",
@@ -282,6 +297,7 @@ const RAW_MENTORS: Mentor[] = [
     availableTimes: ["평일 저녁", "주말 오전"],
     online: false,
     verification: SEED_VERIFIED,
+    enrollment: SEED_ENROLLED,
   },
   {
     id: "m9",
@@ -309,6 +325,7 @@ const RAW_MENTORS: Mentor[] = [
     availableTimes: ["평일 저녁", "주말 오전"],
     online: true,
     verification: SEED_VERIFIED,
+    enrollment: SEED_ENROLLED,
   },
   {
     id: "m10",
@@ -335,6 +352,7 @@ const RAW_MENTORS: Mentor[] = [
     availableTimes: ["주말 오전", "주말 오후"],
     online: true,
     verification: SEED_VERIFIED,
+    enrollment: SEED_ENROLLED,
   },
   {
     id: "m11",
@@ -363,6 +381,7 @@ const RAW_MENTORS: Mentor[] = [
     availableTimes: ["평일 저녁", "주말 저녁"],
     online: true,
     verification: SEED_VERIFIED,
+    enrollment: SEED_ENROLLED,
   },
   {
     id: "m12",
@@ -389,6 +408,7 @@ const RAW_MENTORS: Mentor[] = [
     availableTimes: ["평일 오후", "주말 오후"],
     online: true,
     verification: SEED_VERIFIED,
+    enrollment: SEED_ENROLLED,
   },
   {
     id: "m13",
@@ -417,6 +437,7 @@ const RAW_MENTORS: Mentor[] = [
     availableTimes: ["평일 저녁", "주말 오후"],
     online: true,
     verification: SEED_VERIFIED,
+    enrollment: SEED_ENROLLED,
   },
   {
     id: "m14",
@@ -443,6 +464,7 @@ const RAW_MENTORS: Mentor[] = [
     availableTimes: ["평일 저녁", "주말 오전"],
     online: true,
     verification: SEED_VERIFIED,
+    enrollment: SEED_ENROLLED,
   },
   {
     id: "m15",
@@ -470,6 +492,7 @@ const RAW_MENTORS: Mentor[] = [
     availableTimes: ["평일 저녁", "주말 오후"],
     online: true,
     verification: SEED_VERIFIED,
+    enrollment: SEED_ENROLLED,
   },
   {
     id: "m16",
@@ -497,6 +520,7 @@ const RAW_MENTORS: Mentor[] = [
     availableTimes: ["평일 저녁", "주말 오전"],
     online: true,
     verification: SEED_VERIFIED,
+    enrollment: SEED_ENROLLED,
   },
   {
     id: "m17",
@@ -524,6 +548,7 @@ const RAW_MENTORS: Mentor[] = [
     availableTimes: ["평일 저녁", "주말 저녁"],
     online: true,
     verification: SEED_VERIFIED,
+    enrollment: SEED_ENROLLED,
   },
   {
     id: "m18",
@@ -551,6 +576,7 @@ const RAW_MENTORS: Mentor[] = [
     availableTimes: ["평일 오후", "주말 저녁"],
     online: true,
     verification: SEED_VERIFIED,
+    enrollment: SEED_ENROLLED,
   },
   {
     id: "m19",
@@ -577,6 +603,7 @@ const RAW_MENTORS: Mentor[] = [
     availableTimes: ["평일 저녁", "주말 오후"],
     online: true,
     verification: SEED_VERIFIED,
+    enrollment: SEED_ENROLLED,
   },
   {
     id: "m20",
@@ -604,6 +631,7 @@ const RAW_MENTORS: Mentor[] = [
     availableTimes: ["평일 저녁", "주말 오전"],
     online: true,
     verification: SEED_VERIFIED,
+    enrollment: SEED_ENROLLED,
   },
   {
     id: "m21",
@@ -632,6 +660,7 @@ const RAW_MENTORS: Mentor[] = [
     availableTimes: ["평일 저녁", "주말 오후"],
     online: true,
     verification: SEED_VERIFIED,
+    enrollment: SEED_ENROLLED,
   },
   {
     id: "m22",
@@ -659,6 +688,7 @@ const RAW_MENTORS: Mentor[] = [
     availableTimes: ["평일 저녁", "주말 오전"],
     online: true,
     verification: SEED_VERIFIED,
+    enrollment: SEED_ENROLLED,
   },
   {
     id: "m23",
@@ -685,6 +715,7 @@ const RAW_MENTORS: Mentor[] = [
     availableTimes: ["주말 오전", "주말 오후"],
     online: true,
     verification: SEED_VERIFIED,
+    enrollment: SEED_ENROLLED,
   },
   {
     id: "m24",
@@ -711,6 +742,7 @@ const RAW_MENTORS: Mentor[] = [
     availableTimes: ["평일 저녁", "주말 저녁"],
     online: true,
     verification: SEED_VERIFIED,
+    enrollment: SEED_ENROLLED,
   },
 ];
 

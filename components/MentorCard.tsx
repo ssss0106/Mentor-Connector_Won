@@ -40,8 +40,9 @@ export default function MentorCard({ mentor, score, reasons, story }: Props) {
         </div>
         {score !== undefined && <div className="score">{score}점</div>}
       </div>
-      {(mentor.verification.status === "approved" || hometownLabel(mentor.hometown) || mentor.insight?.switched || mentor.admission) && (
+      {(mentor.verification.status === "approved" || mentor.enrollment.status === "approved" || hometownLabel(mentor.hometown) || mentor.insight?.switched || mentor.admission) && (
         <div className="badge-row">
+          {mentor.enrollment.status === "approved" && <VerificationBadge status="approved" kind="enrollment" />}
           {mentor.verification.status === "approved" && <VerificationBadge status="approved" />}
           {hometownLabel(mentor.hometown) && <span className="tag-region">📍 {hometownLabel(mentor.hometown)}</span>}
           {mentor.insight?.switched && <span className="tag-switch">🔄 전공을 바꾼 경험</span>}

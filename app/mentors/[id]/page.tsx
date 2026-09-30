@@ -7,15 +7,15 @@ import SlotGrid from "@/components/SlotGrid";
 import VerificationBadge from "@/components/VerificationBadge";
 import { SESSION_MINUTES, summarizeSlots } from "@/lib/schedule";
 import { MIN_REVIEWS_FOR_AVERAGE, SESSION_PRICE, formatPrice } from "@/lib/data";
-import { useStore } from "@/lib/store";
+import { isVerifiedMentor, useStore } from "@/lib/store";
 
 export default function MentorDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { ready, allMentors, currentUser, allReviews } = useStore();
   const found = allMentors.find((m) => m.id === id);
-  // 경력 조회 확인 전인 멘토는 본인만 볼 수 있다
+  // 재학 인증·경력 조회 확인 전인 멘토는 본인만 볼 수 있다
   const isOwner = !!found && currentUser?.mentorId === found.id;
-  const mentor = found && (found.verification.status === "approved" || isOwner) ? found : undefined;
+  const mentor = found && (isVerifiedMentor(found) || isOwner) ? found : undefined;
 
   if (!mentor) {
     if (!ready) return null;
@@ -41,7 +41,8 @@ export default function MentorDetailPage() {
               <div className="muted">
                 {mentor.university} · {mentor.major} {mentor.grade}
               </div>
-              <div style={{ marginTop: 8 }}>
+              <div className="badge-row" style={{ marginTop: 8 }}>
+                <VerificationBadge status={mentor.enrollment.status} kind="enrollment" />
                 <VerificationBadge status={mentor.verification.status} />
               </div>
             </div>
@@ -168,9 +169,9 @@ export default function MentorDetailPage() {
             <li><span>멘토링 비용</span><span>{SESSION_MINUTES}분 1회 {formatPrice(SESSION_PRICE)}</span></li>
             <li><span>온라인 멘토링</span><span>{mentor.online ? "가능" : "불가"}</span></li>
           </ul>
-          {mentor.verification.status !== "approved" ? (
+          {!isVerifiedMentor(mentor) ? (
             <p className="muted" style={{ margin: 0, textAlign: "center" }}>
-              경력 조회 확인이 끝나면 학생에게 공개돼요.
+              재학 인증과 경력 조회 확인이 끝나면 학생에게 공개돼요.
             </p>
           ) : isStudent ? (
             <Link href={`/mentors/${mentor.id}/apply`} className="btn btn-block">

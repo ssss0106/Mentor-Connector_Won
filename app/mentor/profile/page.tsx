@@ -110,9 +110,9 @@ export default function MentorProfilePage() {
       },
       existing?.id,
     );
-    // 아직 경력 조회 서류를 내지 않았거나 반려됐다면 동의서 단계로 보낸다
-    const status = existing?.verification.status ?? "not_submitted";
-    router.push(status === "not_submitted" || status === "rejected" ? "/mentor/verify" : "/mypage");
+    // 재학 인증·경력 조회 서류 중 아직 내지 않았거나 반려된 것이 있으면 인증 단계로 보낸다
+    const needs = (st?: string) => !st || st === "not_submitted" || st === "rejected";
+    router.push(needs(existing?.verification.status) || needs(existing?.enrollment.status) ? "/mentor/verify" : "/mypage");
   };
 
   return (

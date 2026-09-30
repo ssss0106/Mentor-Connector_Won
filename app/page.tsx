@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import Avatar from "@/components/Avatar";
+import LandingAnswers from "@/components/LandingAnswers";
+import LandingFaq from "@/components/LandingFaq";
 import MentorCard from "@/components/MentorCard";
 import { SEED_MENTORS, SESSION_PRICE, formatPrice } from "@/lib/data";
 import { useStore } from "@/lib/store";
@@ -119,6 +121,8 @@ export default function Home() {
           </Link>
         </div>
 
+        <LandingAnswers />
+
         <h2 className="section-title">
           이용 후기 <span className="review-note">예시 후기 · MVP 데모용으로 작성한 가상 후기예요</span>
         </h2>
@@ -163,6 +167,8 @@ export default function Home() {
           <em>‘어떤 고민을 가진 학생에게 어떤 경험을 가진 선배가 필요한지’</em>를 연결합니다.
         </p>
       </section>
+
+      <LandingFaq />
     </>
   );
 }

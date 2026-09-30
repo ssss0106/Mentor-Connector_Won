@@ -9,7 +9,7 @@ import VerificationBadge from "@/components/VerificationBadge";
 import { STATUS_LABEL, formatPrice } from "@/lib/data";
 import { formatSession } from "@/lib/schedule";
 import { canChat, resetAll, setRequestStatus, unreadCount, useStore } from "@/lib/store";
-import type { Mentor, MentoringRequest, RequestStatus } from "@/lib/types";
+import type { Mentor, MentoringRequest, RequestStatus, VerificationStatus } from "@/lib/types";
 
 const FLOW: RequestStatus[] = ["pending", "approved", "scheduled", "completed"];
 
@@ -91,6 +91,35 @@ function RequestItem({ req, mentor, asMentor, unread, reviewed }: { req: Mentori
   );
 }
 
+// 멘토 인증 항목 한 줄 (재학 인증 / 경력 조회)
+function VerifyRow({ kind, title, status, reason, todo }: {
+  kind: "enrollment" | "background";
+  title: string;
+  status: VerificationStatus;
+  reason?: string;
+  todo: string;
+}) {
+  const desc = {
+    not_submitted: todo,
+    pending: "운영자가 서류를 확인하고 있어요.",
+    approved: "확인이 끝났어요.",
+    rejected: `반려됐어요. 사유: ${reason || "사유 없음"}`,
+  }[status];
+  return (
+    <div className="verify-row">
+      <div>
+        <strong>{title}</strong> <VerificationBadge status={status} kind={kind} />
+        <div className="muted">{desc}</div>
+      </div>
+      {(status === "not_submitted" || status === "rejected") && (
+        <Link href="/mentor/verify" className="btn btn-sm">
+          {status === "rejected" ? "다시 제출" : "제출하기"}
+        </Link>
+      )}
+    </div>
+  );
+}
+
 type Tab = "all" | "upcoming" | "done";
 
 export default function MyPage() {
@@ -144,24 +173,20 @@ export default function MyPage() {
                 <Link href="/mentor/profile" className="btn btn-sm">프로필 관리</Link>
               </div>
             </div>
-            <div className="verify-row">
-              <div>
-                <strong>경력 조회 확인</strong> <VerificationBadge status={myMentor.verification.status} />
-                <div className="muted">
-                  {{
-                    not_submitted: "동의서와 조회 결과 파일을 제출해야 학생에게 공개돼요.",
-                    pending: "운영자가 서류를 확인하고 있어요. 확인이 끝나면 학생에게 공개돼요.",
-                    approved: "확인이 끝나 학생에게 추천되고 있어요.",
-                    rejected: `반려됐어요. 사유: ${myMentor.verification.rejectReason || "사유 없음"}`,
-                  }[myMentor.verification.status]}
-                </div>
-              </div>
-              {(myMentor.verification.status === "not_submitted" || myMentor.verification.status === "rejected") && (
-                <Link href="/mentor/verify" className="btn btn-sm">
-                  {myMentor.verification.status === "rejected" ? "다시 제출" : "제출하기"}
-                </Link>
-              )}
-            </div>
+            <VerifyRow
+              kind="enrollment"
+              title="재학 인증"
+              status={myMentor.enrollment.status}
+              reason={myMentor.enrollment.rejectReason}
+              todo="재학증명서와 성적증명서를 제출해야 학생에게 공개돼요."
+            />
+            <VerifyRow
+              kind="background"
+              title="경력 조회 확인"
+              status={myMentor.verification.status}
+              reason={myMentor.verification.rejectReason}
+              todo="동의서와 조회 결과 파일을 제출해야 학생에게 공개돼요."
+            />
             </>
           ) : (
             <div className="req-top">

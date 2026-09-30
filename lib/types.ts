@@ -38,6 +38,16 @@ export interface Verification {
   rejectReason?: string;
 }
 
+// 멘토 재학 인증: 재학증명서 + 성적증명서 (시연 버전: 파일 이름만 기록)
+export interface Enrollment {
+  status: VerificationStatus;
+  enrollmentFileName?: string; // 재학증명서
+  transcriptFileName?: string; // 성적증명서
+  submittedAt?: string;
+  reviewedAt?: string;
+  rejectReason?: string;
+}
+
 // 멘토가 겪은 전공·대학생활의 실제 모습 (진학 전 학생에게 가장 필요한 정보)
 export interface MajorInsight {
   satisfaction: number; // 현재 전공 만족도 1~5
@@ -70,7 +80,8 @@ export interface Mentor {
   availableTimes: string[]; // 대략적인 시간대 (매칭 점수용, slots에서 계산)
   slots?: string[]; // 주간 가능 시간표 ("요일-시", lib/schedule.ts 참고)
   online: boolean;
-  verification: Verification;
+  verification: Verification; // 성범죄·아동학대 경력 조회
+  enrollment: Enrollment; // 재학 인증
 }
 
 // AI가 수업 녹음을 듣고 만든 요약 (음성과 원문은 저장하지 않는다)
