@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { hometownLabel } from "@/lib/data";
+import type { ScoreItem } from "@/lib/match";
 import type { Mentor } from "@/lib/types";
 import Avatar from "./Avatar";
 import VerificationBadge from "./VerificationBadge";
@@ -15,6 +16,8 @@ interface Props {
   mentor: Mentor;
   score?: number;
   reasons?: string[];
+  breakdown?: ScoreItem[]; // 점수 항목별 이유 (점수에 마우스를 올리면 보여 준다)
+  sameRegion?: boolean;
   story?: Story;
 }
 
@@ -27,7 +30,7 @@ function snippet(text: string, max: number) {
   return end > max * 0.5 ? cut.slice(0, end + 1) : `${cut.trimEnd()}…`;
 }
 
-export default function MentorCard({ mentor, score, reasons, story }: Props) {
+export default function MentorCard({ mentor, score, reasons, breakdown, sameRegion, story }: Props) {
   return (
     <Link href={`/mentors/${mentor.id}`} className="card mentor-card">
       <div className="mentor-head">
@@ -38,7 +41,33 @@ export default function MentorCard({ mentor, score, reasons, story }: Props) {
             {mentor.university} · {mentor.major} {mentor.grade}
           </div>
         </div>
-        {score !== undefined && <div className="score">{score}점</div>}
+        {score !== undefined && (
+          // 카드 전체가 링크라서, 점수를 눌렀을 때는 이동하지 않고 이유만 보여 준다 (휴대폰에서는 탭으로 열림)
+          <span
+            className="score-wrap"
+            tabIndex={0}
+            aria-describedby={breakdown ? `score-tip-${mentor.id}` : undefined}
+            onClick={(e) => e.preventDefault()}
+          >
+            <span className="score">{score}점</span>
+            {breakdown && breakdown.length > 0 && (
+              <span role="tooltip" id={`score-tip-${mentor.id}`} className="score-tip">
+                <strong className="score-tip-title">이렇게 점수를 매겼어요</strong>
+                {breakdown.map((b) => (
+                  <span key={b.label} className="score-tip-row">
+                    <span>{b.label}</span>
+                    <span className="score-tip-pt">+{b.points}</span>
+                  </span>
+                ))}
+                <span className="score-tip-row score-tip-total">
+                  <span>합계</span>
+                  <span className="score-tip-pt">{score}점</span>
+                </span>
+                {sameRegion && <span className="score-tip-note">📍 같은 지역 출신이라 먼저 추천했어요</span>}
+              </span>
+            )}
+          </span>
+        )}
       </div>
       {(mentor.verification.status === "approved" || mentor.enrollment.status === "approved" || hometownLabel(mentor.hometown) || mentor.insight?.switched || mentor.admission) && (
         <div className="badge-row">

@@ -139,7 +139,6 @@ export default function MentorDetailPage() {
               <div className="review-head">
                 <span className="stars-sm">{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</span>
                 <span>{r.studentLabel}</span>
-                {r.sample && <span className="tag-sample">예시 후기</span>}
                 <span className="muted">{r.createdAt.slice(0, 10)}</span>
               </div>
               {r.helpful.length > 0 && (

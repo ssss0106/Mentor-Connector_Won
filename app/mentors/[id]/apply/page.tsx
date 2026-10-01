@@ -157,7 +157,6 @@ export default function ApplyPage() {
             <strong>이용료 {formatPrice(SESSION_PRICE)}</strong>
             <span className="muted"> · {SESSION_MINUTES}분 1회 · 모든 멘토 동일</span>
           </div>
-          <div className="muted">시연 화면이라 실제로 결제되지 않아요.</div>
         </div>
 
         <button className="btn btn-block" disabled={!valid}>

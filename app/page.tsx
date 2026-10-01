@@ -156,7 +156,6 @@ export default function Home() {
         <div className="container">
           <div className="lp-head">
             <h2>이용 후기</h2>
-            <p>시연용으로 작성한 가상 후기예요.</p>
           </div>
           <div className="lp-reviews">
             {REVIEWS.map((r) => (

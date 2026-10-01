@@ -43,8 +43,7 @@ function PdfInput({ id, label, onChange }: { id: string; label: string; onChange
 function DemoWarning() {
   return (
     <div className="demo-warning">
-      시연 버전에서는 파일 내용을 저장하지 않고 <strong>파일 이름만</strong> 기록해요.
-      실제 개인정보가 담긴 서류는 올리지 말고, 아무 PDF 파일로 시연해 주세요.
+      개인정보 보호를 위해 서류의 파일 내용은 서버에 저장되지 않고 <strong>파일 이름만</strong> 기록돼요.
     </div>
   );
 }
@@ -157,7 +156,6 @@ function BackgroundSection({ mentor }: { mentor: Mentor }) {
         >
           <div className="consent">
             <h3>성범죄 경력 및 아동학대관련범죄 전력 조회 동의서</h3>
-            <p className="consent-note">시연용 양식 · 실제 운영 전 담당 선생님 등의 검토가 필요해요.</p>
             <ol>
               <li><strong>목적</strong> · 청소년 대상 1:1 멘토링 활동의 안전 확보</li>
               <li><strong>조회 항목</strong> · 성범죄 경력, 아동학대관련범죄 전력</li>

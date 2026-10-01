@@ -158,6 +158,24 @@ main { min-height: calc(100vh - 140px); }
 .avatar-lg { width: 88px; height: 88px; font-size: 34px; }
 .mentor-name { font-weight: 800; font-size: 17px; }
 .mentor-intro { margin: 0; font-size: 15px; }
+/* 점수 이유 툴팁 */
+.mentor-card { position: relative; }
+.mentor-card:hover, .mentor-card:focus-within { z-index: 2; }
+.score-wrap { position: relative; display: inline-flex; cursor: help; outline: none; flex-shrink: 0; }
+.score-wrap:focus-visible .score { box-shadow: 0 0 0 3px rgba(255, 138, 61, 0.35); }
+.score-tip {
+  display: none; position: absolute; top: calc(100% + 10px); right: 0; z-index: 10; width: 270px;
+  flex-direction: column; gap: 6px; padding: 14px 16px; border-radius: 14px;
+  background: #1d1f2c; color: #fff; font-size: 13px; line-height: 1.45; text-align: left;
+  box-shadow: 0 12px 28px rgba(20, 20, 40, 0.25);
+}
+.score-tip::before { content: ""; position: absolute; top: -6px; right: 18px; width: 12px; height: 12px; background: #1d1f2c; transform: rotate(45deg); }
+.score-wrap:hover .score-tip, .score-wrap:focus .score-tip { display: flex; }
+.score-tip-title { font-size: 13px; margin-bottom: 2px; }
+.score-tip-row { display: flex; justify-content: space-between; gap: 12px; }
+.score-tip-pt { color: #ffb37a; font-weight: 800; flex-shrink: 0; }
+.score-tip-total { border-top: 1px solid rgba(255, 255, 255, 0.2); padding-top: 6px; margin-top: 2px; font-weight: 700; }
+.score-tip-note { color: #c9cbff; font-size: 12px; margin-top: 2px; }
 .score { background: var(--accent); color: #fff; font-weight: 800; font-size: 14px; padding: 4px 10px; border-radius: 999px; }
 .tags { display: flex; flex-wrap: wrap; gap: 6px; }
 .tag { background: #f0f1f6; color: #4a4e63; font-size: 13px; padding: 4px 10px; border-radius: 6px; }
