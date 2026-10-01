@@ -146,7 +146,6 @@ export default function Home() {
         <div className="container">
           <div className="lp-head">
             <h2>멘토와 나눈 대화 예시</h2>
-            <p>시연용으로 작성한 가상 사례예요.</p>
           </div>
           <LandingAnswers />
         </div>

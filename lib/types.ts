@@ -148,3 +148,26 @@ export interface ChatMessage {
   text: string;
   createdAt: string;
 }
+
+// 마이페이지 문의하기: 운영자에게 묻는 "문의"와 멘토링 피해를 알리는 "신고"
+export type InquiryType = "question" | "report";
+
+export interface Inquiry {
+  id: string;
+  userId: string;
+  userName: string;
+  role: Role;
+  type: InquiryType;
+  category: string; // 문의 분류 또는 피해 유형
+  title: string;
+  content: string;
+  requestId?: string; // 신고: 관련 멘토링
+  targetName?: string; // 신고: 신고 대상 (멘토 또는 학생)
+  requestedAction?: string; // 신고: 요청하는 처분
+  status: "open" | "answered";
+  answer?: string;
+  disposition?: string; // 신고: 운영자 처리 결과
+  answeredAt?: string;
+  answerReadAt?: string; // 문의한 사람이 답변을 확인한 시각
+  createdAt: string;
+}

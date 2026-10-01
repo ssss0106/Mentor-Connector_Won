@@ -168,6 +168,30 @@ main { min-height: calc(100vh - 140px); }
 .filters { display: flex; flex-direction: column; gap: 12px; margin-bottom: 24px; }
 .filter-group { display: flex; gap: 12px; align-items: flex-start; }
 .filter-label { flex-shrink: 0; width: 64px; padding-top: 9px; font-size: 13px; font-weight: 700; color: var(--muted); }
+/* ---------- 문의하기 ---------- */
+.inquiry-entry { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 24px; }
+.inquiry-entry strong { margin-right: 8px; }
+.inquiry-item { display: flex; flex-direction: column; gap: 10px; }
+.inquiry-item h3 { margin: 0; font-size: 17px; }
+.inquiry-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.inquiry-tags { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.inquiry-content { margin: 0; white-space: pre-wrap; font-size: 15px; line-height: 1.65; }
+.inquiry-meta { margin: 0; }
+.inquiry-date { font-size: 12px; }
+.inquiry-answer { background: #f7f8fc; border-left: 3px solid var(--primary); border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px; }
+.inquiry-answer p { margin: 0; white-space: pre-wrap; font-size: 15px; line-height: 1.65; }
+.inquiry-answer-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.inquiry-answer-head .muted { font-size: 12px; }
+.inquiry-disposition { font-size: 14px; color: #b42318; }
+.inquiry-sent { background: #e3f6e8; color: #1f7a3a; border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; }
+.report-notice { padding: 14px 16px; border-radius: 12px; font-size: 14px; }
+.inq-question { background: var(--primary-soft); color: var(--primary); }
+.inq-report { background: #fde2e2; color: #b42318; }
+.inq-new { background: var(--accent); color: #fff; }
+.inq-wait { background: #fff3d6; color: #a36b00; }
+.inq-done { background: #e3f6e8; color: #1f7a3a; }
+.inq-urgent { border-color: #f5c2c0; }
+
 @media (max-width: 760px) {
   .filter-group { flex-direction: column; gap: 6px; }
   .filter-label { padding-top: 0; }

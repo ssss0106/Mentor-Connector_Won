@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from "react";
 import { SEED_MENTORS, SEED_REVIEWS } from "./data";
-import type { ChatMessage, Mentor, MentoringRequest, RequestStatus, StudentProfile, User, Verification, LectureSummary, Review, SafetyReport } from "./types";
+import type { ChatMessage, Inquiry, Mentor, MentoringRequest, RequestStatus, StudentProfile, User, Verification, LectureSummary, Review, SafetyReport } from "./types";
 
 const KEY = "mentor-connector:v1";
 const EVENT = "mentor-connector:change";
@@ -20,9 +20,10 @@ interface DB {
   reviews: Review[];
   reports: SafetyReport[];
   lastRead: Record<string, string>; // "userId:requestId" → 마지막으로 읽은 시각
+  inquiries: Inquiry[];
 }
 
-const empty: DB = { users: [], currentUserId: null, profiles: [], mentors: [], requests: [], messages: [], reviews: [], reports: [], lastRead: {} };
+const empty: DB = { users: [], currentUserId: null, profiles: [], mentors: [], requests: [], messages: [], reviews: [], reports: [], lastRead: {}, inquiries: [] };
 
 function load(): DB {
   if (typeof window === "undefined") return empty;
@@ -257,6 +258,39 @@ export function addReview(r: Omit<Review, "id" | "createdAt">) {
   update((db) => {
     if (db.reviews.some((x) => x.requestId === r.requestId)) return;
     db.reviews.push({ ...r, id: uid("rv"), createdAt: new Date().toISOString() });
+  });
+}
+
+// ---------- 문의·신고 ----------
+
+export function createInquiry(i: Omit<Inquiry, "id" | "status" | "createdAt">) {
+  update((db) => {
+    db.inquiries.push({ ...i, id: uid("q"), status: "open", createdAt: new Date().toISOString() });
+  });
+}
+
+// 운영자 답변 (신고는 처리 결과도 함께 남긴다). 다시 답하면 내용이 바뀌고 새 답변으로 표시된다.
+export function answerInquiry(id: string, answer: string, disposition?: string) {
+  update((db) => {
+    const q = db.inquiries.find((x) => x.id === id);
+    if (!q) return;
+    q.status = "answered";
+    q.answer = answer;
+    q.disposition = disposition;
+    q.answeredAt = new Date().toISOString();
+    q.answerReadAt = undefined;
+  });
+}
+
+// 문의한 사람이 답변을 확인했음을 기록한다
+export function markInquiryAnswersRead(userId: string) {
+  const db = load();
+  if (!db.inquiries.some((q) => q.userId === userId && q.answer && !q.answerReadAt)) return;
+  update((d) => {
+    const now = new Date().toISOString();
+    d.inquiries.forEach((q) => {
+      if (q.userId === userId && q.answer && !q.answerReadAt) q.answerReadAt = now;
+    });
   });
 }
 
