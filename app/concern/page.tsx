@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ChipSelect from "@/components/ChipSelect";
 import { ADMISSION_PATHS, CAMPUS_OPTIONS, CONCERN_TOPICS, GRADES, INTERESTS, REGIONS, TIMES, categoryLabel } from "@/lib/data";
-import { saveStudentProfile, useStore } from "@/lib/store";
+import { PHONE_RE, saveStudentProfile, useStore } from "@/lib/store";
 import type { ConcernCategory } from "@/lib/types";
 
 const CATEGORY_DESC: Record<ConcernCategory, string> = {
@@ -27,6 +27,9 @@ export default function ConcernPage() {
   const [topics, setTopics] = useState<string[]>([]);
   const [concern, setConcern] = useState("");
   const [times, setTimes] = useState<string[]>([]);
+  const [guardianRelation, setGuardianRelation] = useState("어머니");
+  const [guardianPhone, setGuardianPhone] = useState("");
+  const [openToMentors, setOpenToMentors] = useState(false);
 
   // 이미 입력한 고민이 있으면 불러온다
   useEffect(() => {
@@ -41,6 +44,9 @@ export default function ConcernPage() {
     setTopics(myProfile.topics);
     setConcern(myProfile.concern);
     setTimes(myProfile.availableTimes);
+    setGuardianRelation(myProfile.guardianRelation ?? "어머니");
+    setGuardianPhone(myProfile.guardianPhone ?? "");
+    setOpenToMentors(!!myProfile.openToMentors);
   }, [myProfile]);
 
   useEffect(() => {
@@ -49,7 +55,8 @@ export default function ConcernPage() {
 
   if (!ready || !currentUser) return null;
 
-  const valid = interests.length > 0 && topics.length > 0 && concern.trim().length > 0;
+  const phoneOk = PHONE_RE.test(guardianPhone.trim());
+  const valid = interests.length > 0 && topics.length > 0 && concern.trim().length > 0 && phoneOk;
 
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,6 +73,9 @@ export default function ConcernPage() {
       topics,
       concern: concern.trim(),
       availableTimes: times,
+      guardianRelation,
+      guardianPhone: guardianPhone.trim(),
+      openToMentors,
     });
     router.push("/recommend");
   };
@@ -161,6 +171,34 @@ export default function ConcernPage() {
           <label className="label">온라인 멘토링 가능 시간 <span className="hint">선택</span></label>
           <ChipSelect options={TIMES} value={times} onChange={setTimes} />
         </div>
+
+        <div className="field guardian-field">
+          <label className="label" htmlFor="guardian-phone">
+            보호자 연락처 <span className="hint">멘토링 중 안전 문제가 감지되면 보호자에게 바로 문자로 알려 드려요</span>
+          </label>
+          <div className="guardian-row">
+            <select className="select" value={guardianRelation} onChange={(e) => setGuardianRelation(e.target.value)} aria-label="보호자 관계">
+              {["어머니", "아버지", "그 외 보호자"].map((r) => <option key={r}>{r}</option>)}
+            </select>
+            <input
+              id="guardian-phone"
+              className="input"
+              inputMode="tel"
+              value={guardianPhone}
+              onChange={(e) => setGuardianPhone(e.target.value)}
+              placeholder="010-1234-5678"
+            />
+          </div>
+          {guardianPhone.trim() && !phoneOk && <div className="field-error">휴대폰 번호 형식으로 입력해 주세요.</div>}
+          <p className="muted small" style={{ margin: 0 }}>보호자 연락처는 안전 알림에만 쓰이고 멘토에게는 공개되지 않아요.</p>
+        </div>
+
+        <label className="check">
+          <input type="checkbox" checked={openToMentors} onChange={(e) => setOpenToMentors(e.target.checked)} />
+          <span>
+            <strong>[선택]</strong> 멘토가 내 고민을 보고 먼저 멘토링을 제안할 수 있어요. 이름과 연락처는 공개되지 않고 학년·지역·관심 분야·고민 내용만 보여요.
+          </span>
+        </label>
 
         <button className="btn btn-block" disabled={!valid}>
           나에게 맞는 멘토 찾기

@@ -8,7 +8,8 @@ import StatusBadge from "@/components/StatusBadge";
 import VerificationBadge from "@/components/VerificationBadge";
 import { STATUS_LABEL, categoryLabel, formatPrice } from "@/lib/data";
 import { formatSession } from "@/lib/schedule";
-import { activeSanction, canChat, mentorUnreadFromAdmin, resetAll, setRequestStatus, unreadCount, useStore } from "@/lib/store";
+import Avatar from "@/components/Avatar";
+import { activeSanction, canChat, maskPhone, mentorUnreadFromAdmin, resetAll, respondOffer, setRequestStatus, unreadCount, useStore } from "@/lib/store";
 import type { Mentor, MentoringRequest, RequestStatus, VerificationStatus } from "@/lib/types";
 
 const FLOW: RequestStatus[] = ["pending", "approved", "scheduled", "completed"];
@@ -50,6 +51,12 @@ function RequestItem({ req, mentor, asMentor, unread, reviewed, locked }: { req:
         </div>
         <StatusBadge status={req.status} />
       </div>
+      {(req.followUpOf || req.offerId) && (
+        <div className="req-labels">
+          {req.followUpOf && <span className="tag">🔁 이어서 하는 멘토링</span>}
+          {req.offerId && <span className="tag">💌 {asMentor ? "내 제안을 수락한 신청" : "멘토 제안으로 신청"}</span>}
+        </div>
+      )}
       <p className="req-msg">{req.message}</p>
       <StatusFlow status={req.status} />
       {req.summary && (
@@ -60,6 +67,11 @@ function RequestItem({ req, mentor, asMentor, unread, reviewed, locked }: { req:
       )}
       {!asMentor && req.status === "completed" && (
         <div className="req-actions">
+          {mentor && (
+            <Link href={`/mentors/${mentor.id}/apply?from=${req.id}`} className="btn btn-sm btn-outline">
+              🔁 이 멘토와 이어서 멘토링
+            </Link>
+          )}
           {reviewed ? (
             <span className="review-done">✓ 후기를 남겼어요</span>
           ) : (
@@ -126,7 +138,7 @@ type Tab = "all" | "upcoming" | "done";
 export default function MyPage() {
   const router = useRouter();
   const store = useStore();
-  const { ready, currentUser, myProfile, requests, allMentors, messages, lastRead, allReviews, inquiries, adminMessages } = store;
+  const { ready, currentUser, myProfile, requests, allMentors, messages, lastRead, allReviews, inquiries, adminMessages, offers, guardianAlerts } = store;
   const [tab, setTab] = useState<Tab>("all");
 
   useEffect(() => {
@@ -140,6 +152,9 @@ export default function MyPage() {
   const sanction = myMentor ? activeSanction(store, myMentor.id) : undefined;
   const hasAdminThread = !!myMentor && adminMessages.some((m) => m.mentorId === myMentor.id);
   const adminUnreadCount = myMentor ? mentorUnreadFromAdmin(store, myMentor.id, currentUser.id) : 0;
+  const myOffers = isMentor ? [] : offers.filter((o) => o.studentId === currentUser.id && o.status === "pending").reverse();
+  const sentOffers = myMentor ? offers.filter((o) => o.mentorId === myMentor.id) : [];
+  const myAlerts = isMentor ? [] : guardianAlerts.filter((a) => a.studentId === currentUser.id).reverse();
 
   const mine = requests
     .filter((r) => (isMentor ? r.mentorId === currentUser.mentorId : r.studentId === currentUser.id))
@@ -167,6 +182,19 @@ export default function MyPage() {
           <strong>{sanction.type === "banned" ? "계정이 영구 정지됐어요." : `멘토 활동이 ${new Date(sanction.until ?? "").toLocaleDateString("ko-KR")}까지 정지됐어요.`}</strong>
           <span>사유: {sanction.reason}</span>
           <span className="muted">정지 기간에는 학생에게 프로필이 보이지 않고, 신청 처리와 채팅을 할 수 없어요. 궁금한 점은 운영팀에 문의해 주세요.</span>
+        </div>
+      )}
+
+      {myMentor && (
+        <div className="card inquiry-entry">
+          <div>
+            <strong>멘티 찾기</strong>
+            <div className="muted">
+              제안 받기에 동의한 멘티의 고민을 보고 먼저 멘토링을 제안할 수 있어요. 멘티의 이름과 연락처는 공개되지 않아요.
+              {sentOffers.length > 0 && ` 보낸 제안 ${sentOffers.length}건 · 수락 ${sentOffers.filter((o) => o.status === "accepted").length}건`}
+            </div>
+          </div>
+          <Link href="/mentor/students" className="btn btn-sm">멘티 찾기</Link>
         </div>
       )}
 
@@ -235,7 +263,53 @@ export default function MyPage() {
               {myProfile && <Link href="/recommend" className="btn btn-sm">추천 멘토</Link>}
             </div>
           </div>
+          <div className="guardian-info">
+            <span>🛡️ 보호자 안전 알림</span>
+            {myProfile?.guardianPhone ? (
+              <span className="muted">
+                {myProfile.guardianRelation} {maskPhone(myProfile.guardianPhone)} · 멘토링 중 안전 문제가 감지되면 바로 문자로 알려 드려요.
+                {myAlerts.length > 0 && ` 지금까지 ${myAlerts.length}건 보냈어요.`}
+              </span>
+            ) : (
+              <span className="muted">
+                보호자 연락처가 없어요. <Link href="/concern">고민 수정</Link>에서 등록해 주세요.
+              </span>
+            )}
+          </div>
+          {myProfile && (
+            <div className="guardian-info">
+              <span>💌 멘토 제안 받기</span>
+              <span className="muted">{myProfile.openToMentors ? "켜짐 · 멘토가 이름 없이 고민을 보고 먼저 제안할 수 있어요." : "꺼짐 · 고민 수정에서 켤 수 있어요."}</span>
+            </div>
+          )}
         </div>
+      )}
+
+      {myOffers.length > 0 && (
+        <section className="offer-list">
+          <h2 className="section-title">멘토에게 받은 제안 <span className="badge inq-new">새 제안 {myOffers.length}</span></h2>
+          {myOffers.map((o) => {
+            const m = allMentors.find((x) => x.id === o.mentorId);
+            if (!m) return null;
+            return (
+              <div key={o.id} className="card offer-card">
+                <div className="offer-head">
+                  <Avatar seed={m.id + m.name} size={44} />
+                  <div>
+                    <strong>{m.name} 멘토</strong>
+                    <div className="muted">{m.university} · {m.major} {m.grade}</div>
+                  </div>
+                </div>
+                <p className="offer-msg">“{o.message}”</p>
+                <div className="req-actions">
+                  <button className="btn btn-sm btn-ghost" onClick={() => respondOffer(o.id, "declined")}>거절</button>
+                  <Link href={`/mentors/${m.id}`} className="btn btn-sm btn-ghost">프로필 보기</Link>
+                  <Link href={`/mentors/${m.id}/apply?offer=${o.id}`} className="btn btn-sm">시간 골라 신청하기</Link>
+                </div>
+              </div>
+            );
+          })}
+        </section>
       )}
 
       {(() => {

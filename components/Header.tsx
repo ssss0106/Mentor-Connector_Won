@@ -1,12 +1,16 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import AdminChatMenu from "./AdminChatMenu";
 import { logout, useStore } from "@/lib/store";
 import ChatMenu from "./ChatMenu";
 import Logo from "./Logo";
 
 export default function Header() {
   const { currentUser } = useStore();
+  // 운영자 페이지에서는 운영자용 채팅 아이콘(멘토와의 대화)을 보여 준다
+  const isAdminPage = usePathname()?.startsWith("/admin");
 
   return (
     <header className="header">
@@ -16,11 +20,13 @@ export default function Header() {
         </Link>
         <nav className="nav">
           <Link href="/mentors">멘토 둘러보기</Link>
+          {isAdminPage && <AdminChatMenu />}
           {currentUser?.role === "student" && <Link href="/concern">고민 입력</Link>}
+          {currentUser?.role === "mentor" && currentUser.mentorId && <Link href="/mentor/students">멘티 찾기</Link>}
           {currentUser ? (
             <>
               <Link href="/mypage">마이페이지</Link>
-              <ChatMenu />
+              {!isAdminPage && <ChatMenu />}
               <button
                 className="link-btn"
                 onClick={() => {
