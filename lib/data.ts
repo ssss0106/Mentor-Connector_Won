@@ -1142,8 +1142,26 @@ const RAW_MENTORS: Mentor[] = [
   },
 ];
 
+// 한 그룹(예: 농어촌학생 전형 멘토)이 목록 끝에 몰리지 않도록 나머지 멘토 사이에 고르게 섞는다
+function spreadEvenly(list: Mentor[], inGroup: (m: Mentor) => boolean): Mentor[] {
+  const group = list.filter(inGroup);
+  const rest = list.filter((m) => !inGroup(m));
+  const out: Mentor[] = [];
+  let gi = 0;
+  let ri = 0;
+  for (let k = 0; k < list.length; k++) {
+    // 지금까지 그룹 멘토가 차지해야 할 몫만큼만 그룹에서 꺼낸다
+    if (gi < Math.floor(((k + 1) * group.length) / list.length)) out.push(group[gi++]);
+    else out.push(rest[ri++]);
+  }
+  return out;
+}
+
 // 시드 멘토의 주간 시간표는 대략적인 시간대에서 예시로 만든다
-export const SEED_MENTORS: Mentor[] = RAW_MENTORS.map((m) => ({ ...m, slots: sampleSlots(m.availableTimes) }));
+export const SEED_MENTORS: Mentor[] = spreadEvenly(RAW_MENTORS, (m) => m.admission?.path === "농어촌학생 전형").map((m) => ({
+  ...m,
+  slots: sampleSlots(m.availableTimes),
+}));
 
 // 시연용 예시 후기 (실제 이용자 후기가 아님). 화면에도 "예시"로 표시한다.
 export const SEED_REVIEWS: Review[] = [
