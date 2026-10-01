@@ -173,3 +173,24 @@ export interface Inquiry {
   answerReadAt?: string; // 문의한 사람이 답변을 확인한 시각
   createdAt: string;
 }
+
+// 운영자가 멘토에게 내린 조치 (활동 정지는 기간이 끝나면 자동으로 풀린다)
+export interface MentorSanction {
+  id: string;
+  mentorId: string;
+  type: "suspended" | "banned";
+  days?: number; // 활동 정지 기간(일)
+  until?: string; // 활동 정지가 끝나는 시각
+  reason: string;
+  createdAt: string;
+  liftedAt?: string; // 운영자가 직접 해제한 시각
+}
+
+// 운영자 ↔ 멘토 1:1 채팅
+export interface AdminMessage {
+  id: string;
+  mentorId: string;
+  from: "admin" | "mentor";
+  text: string;
+  createdAt: string;
+}

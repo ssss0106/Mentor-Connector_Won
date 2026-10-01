@@ -10,7 +10,7 @@ import Avatar from "@/components/Avatar";
 import StatusBadge from "@/components/StatusBadge";
 import { moderateChatMessage } from "@/lib/moderate-chat";
 import { formatSession } from "@/lib/schedule";
-import { canChat, markChatRead, sendMessage, useStore } from "@/lib/store";
+import { activeSanction, canChat, markChatRead, sendMessage, useStore } from "@/lib/store";
 
 const MAX_LENGTH = 500;
 
@@ -23,7 +23,8 @@ const timeLabel = (iso: string) =>
 
 export default function ChatPage() {
   const { id } = useParams<{ id: string }>();
-  const { ready, currentUser, requests, allMentors, messages } = useStore();
+  const store = useStore();
+  const { ready, currentUser, requests, allMentors, messages } = store;
   const [text, setText] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -53,7 +54,8 @@ export default function ChatPage() {
   const other = isMentor
     ? { name: `${req.studentName} 학생`, seed: req.studentName }
     : { name: `${mentor.name} 멘토`, seed: mentor.id + mentor.name };
-  const open = canChat(req);
+  const locked = !!activeSanction(store, mentor.id);
+  const open = canChat(req) && !locked;
   const trimmed = text.trim();
   const blocked = PHONE_PATTERN.test(trimmed);
   const outside = !blocked && OUTSIDE_PATTERN.test(trimmed);
@@ -95,6 +97,12 @@ export default function ChatPage() {
         <span className="muted">🛡️ 안전을 위해 보낸 메시지는 AI(OpenAI)로 점검돼요. 비속어·괴롭힘·외부 연락 유도가 감지되면 해당 메시지의 일부가 운영자에게 전달될 수 있어요.</span>
       </div>
 
+      {locked && (
+        <div className="chat-notice sanction-notice">
+          {isMentor ? "운영 정책에 따라 멘토 활동이 제한되어 지금은 메시지를 보낼 수 없어요. 마이페이지에서 운영팀 안내를 확인해 주세요." : "운영 정책에 따라 이 멘토의 활동이 제한되어 지금은 대화할 수 없어요."}
+        </div>
+      )}
+
       <div className="chat-log card">
         <div className="chat-bubble-wrap them">
           <div className="chat-bubble chat-first">
@@ -106,7 +114,7 @@ export default function ChatPage() {
 
         {chat.length === 0 && (
           <div className="chat-empty muted">
-            {open ? "첫 메시지를 보내 인사해 보세요." : "멘토가 신청을 승인하면 채팅을 시작할 수 있어요."}
+            {open ? "첫 메시지를 보내 인사해 보세요." : locked ? "지금은 대화할 수 없어요." : "멘토가 신청을 승인하면 채팅을 시작할 수 있어요."}
           </div>
         )}
 
@@ -138,7 +146,7 @@ export default function ChatPage() {
               send();
             }
           }}
-          placeholder={open ? "메시지를 입력하세요 (Enter 전송, Shift+Enter 줄바꿈)" : "멘토 승인 후 채팅할 수 있어요"}
+          placeholder={open ? "메시지를 입력하세요 (Enter 전송, Shift+Enter 줄바꿈)" : locked ? "지금은 메시지를 보낼 수 없어요" : "멘토 승인 후 채팅할 수 있어요"}
         />
         <button className="btn" disabled={!trimmed || blocked || !open}>
           보내기

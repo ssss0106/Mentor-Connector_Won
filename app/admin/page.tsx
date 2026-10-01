@@ -5,7 +5,8 @@ import Link from "next/link";
 import StatusBadge from "@/components/StatusBadge";
 import VerificationBadge from "@/components/VerificationBadge";
 import { SEED_MENTORS } from "@/lib/data";
-import { answerInquiry, isVerifiedMentor, reviewEnrollment, reviewVerification, setReportStatus, useStore } from "@/lib/store";
+import { MentorManagePanel, SanctionBadge } from "@/components/AdminMentorManage";
+import { activeSanction, adminUnread, answerInquiry, isVerifiedMentor, reviewEnrollment, reviewVerification, setReportStatus, useStore } from "@/lib/store";
 import type { Inquiry, Mentor, SafetyReport, VerificationStatus } from "@/lib/types";
 
 // 운영자 페이지 (시연용)
@@ -153,7 +154,7 @@ function ReviewCard({ mentor }: { mentor: Mentor }) {
 // 신고 처리 결과
 const DISPOSITIONS = ["경고 조치", "멘토링 활동 정지", "계정 영구 정지", "조치 없음 (사실 확인 불가)", "기타 조치"];
 
-function InquiryAdminCard({ q, requestLabel }: { q: Inquiry; requestLabel?: string }) {
+function InquiryAdminCard({ q, requestLabel, onManage }: { q: Inquiry; requestLabel?: string; onManage?: () => void }) {
   const [editing, setEditing] = useState(q.status === "open");
   const [answer, setAnswer] = useState(q.answer ?? "");
   const [disposition, setDisposition] = useState(q.disposition ?? "");
@@ -178,6 +179,11 @@ function InquiryAdminCard({ q, requestLabel }: { q: Inquiry; requestLabel?: stri
         {q.targetName && <li><span>신고 대상</span><span>{q.targetName}</span></li>}
         {q.requestedAction && <li><span>요청한 처분</span><span>{q.requestedAction}</span></li>}
       </ul>
+      {onManage && (
+        <div className="req-actions manage-link">
+          <button className="btn btn-sm btn-outline" onClick={onManage}>이 멘토 활동 관리 →</button>
+        </div>
+      )}
 
       {editing ? (
         <div className="reject-box">
@@ -213,7 +219,7 @@ function InquiryAdminCard({ q, requestLabel }: { q: Inquiry; requestLabel?: stri
   );
 }
 
-function SafetyCard({ report }: { report: SafetyReport }) {
+function SafetyCard({ report, onManage }: { report: SafetyReport; onManage: () => void }) {
   const urgent = report.severity === "urgent";
   return (
     <div className={`card req safety-card ${urgent ? "urgent" : ""} ${report.status !== "new" ? "done" : ""}`}>
@@ -234,12 +240,15 @@ function SafetyCard({ report }: { report: SafetyReport }) {
       </div>
       <p className="safety-quote">“{report.excerpt || "발언 내용 없음"}”</p>
       <p className="muted" style={{ margin: 0 }}>{report.reason}</p>
-      {report.status === "new" && (
-        <div className="req-actions">
-          <button className="btn btn-sm btn-ghost" onClick={() => setReportStatus(report.id, "dismissed")}>오탐으로 처리</button>
-          <button className="btn btn-sm" onClick={() => setReportStatus(report.id, "reviewed")}>확인 완료</button>
-        </div>
-      )}
+      <div className="req-actions">
+        <button className="btn btn-sm btn-outline" onClick={onManage}>멘토 활동 관리 →</button>
+        {report.status === "new" && (
+          <>
+            <button className="btn btn-sm btn-ghost" onClick={() => setReportStatus(report.id, "dismissed")}>오탐으로 처리</button>
+            <button className="btn btn-sm" onClick={() => setReportStatus(report.id, "reviewed")}>확인 완료</button>
+          </>
+        )}
+      </div>
     </div>
   );
 }
@@ -247,9 +256,20 @@ function SafetyCard({ report }: { report: SafetyReport }) {
 type Tab = "verify" | "safety" | "mentors" | "requests" | "inquiries";
 
 export default function AdminPage() {
-  const { ready, mentors, allMentors, requests, reports, inquiries } = useStore();
+  const store = useStore();
+  const { ready, mentors, allMentors, requests, reports, inquiries } = store;
   const [unlocked, setUnlocked] = useState(false);
   const [tab, setTab] = useState<Tab>("verify");
+  const [managed, setManaged] = useState<string | null>(null);
+  const [mentorQuery, setMentorQuery] = useState("");
+
+  // 신고·안전 알림에서 "멘토 활동 관리"를 누르면 멘토 관리 탭으로 이동한다
+  const manage = (mentorId?: string) => {
+    if (!mentorId) return;
+    setManaged(mentorId);
+    setTab("mentors");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   useEffect(() => {
     setUnlocked(sessionStorage.getItem(UNLOCK_KEY) === "1");
@@ -284,7 +304,7 @@ export default function AdminPage() {
   const tabs: { key: Tab; label: string }[] = [
     { key: "verify", label: `인증 서류 확인 (${pendingCount})` },
     { key: "safety", label: `안전 알림 (${newReports})` },
-    { key: "mentors", label: `멘토 전체 (${allMentors.length})` },
+    { key: "mentors", label: `멘토 관리 (${allMentors.length})` },
     { key: "requests", label: `멘토링 신청 (${requests.length})` },
     { key: "inquiries", label: `문의·신고 (${inquiries.filter((q) => q.status === "open").length})` },
   ];
@@ -295,6 +315,16 @@ export default function AdminPage() {
       Number(a.type !== "report") - Number(b.type !== "report") ||
       b.createdAt.localeCompare(a.createdAt),
   );
+  const mentorOfRequest = (id?: string) => requests.find((x) => x.id === id)?.mentorId;
+  const sanctionedCount = allMentors.filter((m) => activeSanction(store, m.id)).length;
+  // 신고·알림이 많은 멘토와 안 읽은 채팅이 있는 멘토를 위로
+  const issueCount = (id: string) =>
+    reports.filter((r) => r.mentorId === id && r.status === "new").length +
+    inquiries.filter((q) => q.type === "report" && q.role === "student" && q.status === "open" && mentorOfRequest(q.requestId) === id).length;
+  const mq = mentorQuery.trim();
+  const managedList = allMentors
+    .filter((m) => !mq || m.name.includes(mq) || m.university.includes(mq) || m.major.includes(mq))
+    .sort((a, b) => issueCount(b.id) - issueCount(a.id) || adminUnread(store, b.id) - adminUnread(store, a.id));
   const requestLabel = (id?: string) => {
     const r = requests.find((x) => x.id === id);
     return r ? `${r.studentName} 학생 ↔ ${allMentors.find((m) => m.id === r.mentorId)?.name ?? "-"} 멘토 · ${r.date} ${r.time}` : undefined;
@@ -304,7 +334,7 @@ export default function AdminPage() {
     <div className="container page">
       <h1 className="page-title">운영자 페이지</h1>
       <p className="page-sub">
-        멘토 인증, 안전 알림, 문의·신고를 관리하는 운영자 화면이에요.{" "}
+        멘토 인증, 안전 알림, 문의·신고, 멘토 활동을 관리하는 운영자 화면이에요.{" "}
         <button
           className="link-btn"
           onClick={() => {
@@ -322,6 +352,7 @@ export default function AdminPage() {
         <div className="card stat"><span>반려 있음</span><strong>{rejectedCount}</strong></div>
         <div className="card stat"><span>서류 미제출 있음</span><strong>{missingCount}</strong></div>
         <div className="card stat"><span>새 안전 알림</span><strong>{newReports}</strong></div>
+        <div className="card stat"><span>활동 제한 멘토</span><strong>{sanctionedCount}</strong></div>
       </div>
 
       <div className="tabs">
@@ -355,29 +386,44 @@ export default function AdminPage() {
             <div className="card empty">감지된 안전 알림이 없어요.</div>
           ) : (
             <div className="req-list">
-              {sortedReports.map((r) => <SafetyCard key={r.id} report={r} />)}
+              {sortedReports.map((r) => <SafetyCard key={r.id} report={r} onManage={() => manage(r.mentorId)} />)}
             </div>
           )}
         </>
       )}
 
       {tab === "mentors" && (
-        <table className="compare admin-table">
-          <thead>
-            <tr><th>이름</th><th>대학 · 전공</th><th>구분</th><th>재학 인증</th><th>경력 조회</th></tr>
-          </thead>
-          <tbody>
-            {allMentors.map((m) => (
-              <tr key={m.id}>
-                <td><Link href={`/mentors/${m.id}`}>{m.name}</Link></td>
-                <td>{m.university} · {m.major}</td>
-                <td>{isSeed(m) ? "기존 멘토" : "가입 멘토"}</td>
-                <td><VerificationBadge status={m.enrollment.status} kind="enrollment" /></td>
-                <td><VerificationBadge status={m.verification.status} /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <>
+          {managed && <MentorManagePanel key={managed} mentorId={managed} onClose={() => setManaged(null)} />}
+          <input className="input manage-search" value={mentorQuery} onChange={(e) => setMentorQuery(e.target.value)}
+            placeholder="이름·대학·전공으로 멘토 찾기" aria-label="멘토 검색" />
+          <table className="compare admin-table">
+            <thead>
+              <tr><th>이름</th><th>대학 · 전공</th><th>구분</th><th>재학 인증</th><th>경력 조회</th><th>활동 상태</th><th>관리</th></tr>
+            </thead>
+            <tbody>
+              {managedList.map((m) => {
+                const issues = issueCount(m.id);
+                const unread = adminUnread(store, m.id);
+                return (
+                  <tr key={m.id} className={managed === m.id ? "row-on" : ""}>
+                    <td><Link href={`/mentors/${m.id}`}>{m.name}</Link></td>
+                    <td>{m.university} · {m.major}</td>
+                    <td>{isSeed(m) ? "기존 멘토" : "가입 멘토"}</td>
+                    <td><VerificationBadge status={m.enrollment.status} kind="enrollment" /></td>
+                    <td><VerificationBadge status={m.verification.status} /></td>
+                    <td><SanctionBadge s={activeSanction(store, m.id)} /></td>
+                    <td className="manage-cell">
+                      <button className="btn btn-sm btn-ghost" onClick={() => manage(m.id)}>관리</button>
+                      {issues > 0 && <span className="manage-flag" title="처리 안 된 신고·알림">🚨 {issues}</span>}
+                      {unread > 0 && <span className="manage-flag" title="안 읽은 메시지">💬 {unread}</span>}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </>
       )}
 
       {tab === "requests" &&
@@ -406,7 +452,14 @@ export default function AdminPage() {
           <div className="card empty">들어온 문의가 없어요.</div>
         ) : (
           <div className="req-list">
-            {sortedInquiries.map((q) => <InquiryAdminCard key={q.id} q={q} requestLabel={requestLabel(q.requestId)} />)}
+            {sortedInquiries.map((q) => (
+              <InquiryAdminCard
+                key={q.id}
+                q={q}
+                requestLabel={requestLabel(q.requestId)}
+                onManage={q.type === "report" && q.role === "student" && mentorOfRequest(q.requestId) ? () => manage(mentorOfRequest(q.requestId)) : undefined}
+              />
+            ))}
           </div>
         ))}
     </div>

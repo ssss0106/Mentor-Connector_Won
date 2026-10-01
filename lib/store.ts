@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from "react";
 import { SEED_MENTORS, SEED_REVIEWS } from "./data";
-import type { ChatMessage, Inquiry, Mentor, MentoringRequest, RequestStatus, StudentProfile, User, Verification, LectureSummary, Review, SafetyReport } from "./types";
+import type { AdminMessage, ChatMessage, Inquiry, MentorSanction, Mentor, MentoringRequest, RequestStatus, StudentProfile, User, Verification, LectureSummary, Review, SafetyReport } from "./types";
 
 const KEY = "mentor-connector:v1";
 const EVENT = "mentor-connector:change";
@@ -21,9 +21,12 @@ interface DB {
   reports: SafetyReport[];
   lastRead: Record<string, string>; // "userId:requestId" → 마지막으로 읽은 시각
   inquiries: Inquiry[];
+  sanctions: MentorSanction[];
+  adminMessages: AdminMessage[];
+  adminRead: Record<string, string>; // 멘토 id → 운영자가 그 멘토와의 채팅을 마지막으로 읽은 시각
 }
 
-const empty: DB = { users: [], currentUserId: null, profiles: [], mentors: [], requests: [], messages: [], reviews: [], reports: [], lastRead: {}, inquiries: [] };
+const empty: DB = { users: [], currentUserId: null, profiles: [], mentors: [], requests: [], messages: [], reviews: [], reports: [], lastRead: {}, inquiries: [], sanctions: [], adminMessages: [], adminRead: {} };
 
 function load(): DB {
   if (typeof window === "undefined") return empty;
@@ -69,8 +72,17 @@ export function getMentor(id: string, db: DB = load()): Mentor | undefined {
 // 재학 인증과 경력 조회 확인이 모두 끝난 멘토만 학생에게 보여 주고 추천한다
 export const isVerifiedMentor = (m: Mentor) => m.verification.status === "approved" && m.enrollment.status === "approved";
 
+// 지금 효력이 있는 조치 (영구 정지, 또는 기간이 남은 활동 정지)
+export function activeSanction(db: Pick<DB, "sanctions">, mentorId: string): MentorSanction | undefined {
+  const now = new Date().toISOString();
+  return [...db.sanctions]
+    .reverse()
+    .find((s) => s.mentorId === mentorId && !s.liftedAt && (s.type === "banned" || (s.until ?? "") > now));
+}
+
+// 활동 정지·영구 정지된 멘토는 목록·추천·신청에서 빠진다
 export function getVisibleMentors(db: DB = load()): Mentor[] {
-  return getAllMentors(db).filter(isVerifiedMentor);
+  return getAllMentors(db).filter((m) => isVerifiedMentor(m) && !activeSanction(db, m.id));
 }
 
 // ---------- 계정 ----------
@@ -259,6 +271,66 @@ export function addReview(r: Omit<Review, "id" | "createdAt">) {
     if (db.reviews.some((x) => x.requestId === r.requestId)) return;
     db.reviews.push({ ...r, id: uid("rv"), createdAt: new Date().toISOString() });
   });
+}
+
+// ---------- 멘토 활동 관리 (운영자) ----------
+
+export function suspendMentor(mentorId: string, days: number, reason: string) {
+  const now = new Date();
+  const until = new Date(now.getTime() + days * 24 * 60 * 60 * 1000).toISOString();
+  update((db) => {
+    db.sanctions.push({ id: uid("sn"), mentorId, type: "suspended", days, until, reason, createdAt: now.toISOString() });
+  });
+}
+
+export function banMentor(mentorId: string, reason: string) {
+  update((db) => {
+    db.sanctions.push({ id: uid("sn"), mentorId, type: "banned", reason, createdAt: new Date().toISOString() });
+  });
+}
+
+export function liftSanction(mentorId: string) {
+  update((db) => {
+    const s = activeSanction(db, mentorId);
+    if (s) db.sanctions.find((x) => x.id === s.id)!.liftedAt = new Date().toISOString();
+  });
+}
+
+// ---------- 운영자 ↔ 멘토 채팅 ----------
+
+export function sendAdminMessage(mentorId: string, from: "admin" | "mentor", text: string, mentorUserId?: string) {
+  const now = new Date().toISOString();
+  update((db) => {
+    db.adminMessages.push({ id: uid("am"), mentorId, from, text, createdAt: now });
+    if (from === "admin") db.adminRead[mentorId] = now;
+    else if (mentorUserId) db.lastRead[`${mentorUserId}:admin`] = now;
+  });
+}
+
+// reader: "admin" 이면 운영자, 아니면 멘토의 User id
+export function markAdminChatRead(mentorId: string, reader: "admin" | string) {
+  const db = load();
+  const last = db.adminMessages.filter((m) => m.mentorId === mentorId).at(-1);
+  if (!last) return;
+  const key = reader === "admin" ? null : `${reader}:admin`;
+  const seen = key ? db.lastRead[key] : db.adminRead[mentorId];
+  if ((seen ?? "") >= last.createdAt) return;
+  update((d) => {
+    const now = new Date().toISOString();
+    if (key) d.lastRead[key] = now;
+    else d.adminRead[mentorId] = now;
+  });
+}
+
+// 운영자 입장에서 안 읽은 멘토 메시지 수 / 멘토 입장에서 안 읽은 운영자 메시지 수
+export function adminUnread(db: Pick<DB, "adminMessages" | "adminRead">, mentorId: string): number {
+  const since = db.adminRead[mentorId] ?? "";
+  return db.adminMessages.filter((m) => m.mentorId === mentorId && m.from === "mentor" && m.createdAt > since).length;
+}
+
+export function mentorUnreadFromAdmin(db: Pick<DB, "adminMessages" | "lastRead">, mentorId: string, userId: string): number {
+  const since = db.lastRead[`${userId}:admin`] ?? "";
+  return db.adminMessages.filter((m) => m.mentorId === mentorId && m.from === "admin" && m.createdAt > since).length;
 }
 
 // ---------- 문의·신고 ----------

@@ -142,7 +142,7 @@ main { min-height: calc(100vh - 140px); }
 
 .review { display: flex; flex-direction: column; gap: 12px; }
 .review p { margin: 0; font-size: 15px; flex: 1; }
-.stars { color: #ffb400; letter-spacing: 2px; }
+.stars { color: #ffb400; letter-spacing: 2px; font-size: 20px; }
 .review-who { display: flex; align-items: center; gap: 10px; font-size: 14px; }
 .review-note { font-size: 13px; font-weight: 500; color: var(--muted); margin-left: 8px; }
 
@@ -340,7 +340,7 @@ main { min-height: calc(100vh - 140px); }
 .tag-sample { padding: 2px 8px; border-radius: 6px; background: #fff4e5; color: #b45a00; font-size: 11px; font-weight: 700; }
 .review-done { color: #1a7f4b; font-weight: 600; font-size: 14px; }
 .star-picker { display: flex; gap: 6px; }
-.star-btn { font-size: 32px; line-height: 1; background: none; border: none; cursor: pointer; color: #d0d3df; padding: 0; }
+.star-btn { font-size: 40px; line-height: 1; background: none; border: none; cursor: pointer; color: #d0d3df; padding: 0; }
 .star-btn.on { color: #f5a524; }
 
 /* ---------- price ---------- */
@@ -353,7 +353,7 @@ main { min-height: calc(100vh - 140px); }
 .insight-row + .insight-row { border-top: 1px solid var(--border); }
 .insight-label { font-weight: 700; color: var(--muted); }
 .insight-switch { background: #f2f6ff; }
-.stars-sm { color: #f5a524; letter-spacing: 1px; }
+.stars-sm { color: #f5a524; letter-spacing: 1px; font-size: 18px; }
 .tag-switch { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; background: #eaf0ff; color: #3554d1; font-size: 12px; font-weight: 600; }
 .card-insight { margin: 0; font-size: 13px; line-height: 1.5; color: #4a4d63; }
 .card-insight strong { color: var(--text); }
@@ -520,7 +520,7 @@ main { min-height: calc(100vh - 140px); }
 /* 후기 */
 .lp-reviews { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
 .lp-review { margin: 0; display: flex; flex-direction: column; gap: 14px; padding: 28px 24px; background: var(--bg); border-radius: 20px; }
-.lp-review .stars { font-size: 14px; }
+.lp-review .stars { font-size: 20px; }
 .lp-review blockquote { margin: 0; flex: 1; font-size: 16px; line-height: 1.65; font-weight: 600; }
 .lp-review figcaption { display: flex; align-items: center; gap: 10px; font-size: 14px; line-height: 1.4; }
 .lp-review figcaption .muted { font-size: 12px; }
@@ -606,4 +606,38 @@ main { min-height: calc(100vh - 140px); }
 
 @media (max-width: 1000px) and (min-width: 761px) {
   .talk-grid, .lp-reviews { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ---------- 멘토 활동 관리 (운영자) ---------- */
+.sanction-suspend { background: #fff4e0; color: #b25e00; }
+.sanction-ban { background: #fde8e7; color: #b42318; }
+.btn.btn-warn { background: #e8890c; }
+.btn.btn-warn:hover { background: #c57106; }
+.manage-panel { margin-bottom: 20px; display: flex; flex-direction: column; gap: 14px; border: 1.5px solid var(--primary); }
+.manage-who { display: flex; align-items: center; gap: 12px; }
+.manage-head-right { display: flex; align-items: center; gap: 12px; }
+.manage-stats { display: flex; flex-wrap: wrap; gap: 16px; font-size: 14px; color: var(--muted); }
+.manage-stats strong { color: var(--text); }
+.manage-current { margin-bottom: 0; }
+.manage-actions { display: flex; flex-direction: column; gap: 10px; }
+.manage-buttons { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.manage-suspend { display: flex; gap: 8px; align-items: center; }
+.manage-suspend .select { width: auto; padding: 8px 12px; }
+.manage-hint { margin: 0; font-size: 13px; }
+.manage-history ul { margin: 6px 0 0; padding-left: 18px; font-size: 13px; display: flex; flex-direction: column; gap: 4px; }
+.manage-history li span + span { margin-left: 8px; }
+.manage-search { margin-bottom: 12px; max-width: 360px; }
+.manage-cell { white-space: nowrap; }
+.manage-flag { margin-left: 6px; font-size: 12px; font-weight: 700; color: #b42318; }
+.admin-table tr.row-on td { background: var(--primary-soft); }
+.manage-link { margin-top: 0; }
+.admin-chat { display: flex; flex-direction: column; gap: 10px; }
+.admin-chat-log { display: flex; flex-direction: column; gap: 12px; max-height: 320px; overflow-y: auto; padding: 16px; background: #fbfbfe; border-radius: 12px; border: 1px solid var(--border); }
+.admin-chat-empty { text-align: center; padding: 20px 0; }
+.sanction-notice { background: #fff6f5; border-color: #f5c2c0; color: #b42318; }
+.sanction-banner { margin-bottom: 16px; }
+.support-avatar { width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%; background: var(--primary-soft); display: grid; place-items: center; font-size: 20px; }
+.chat-room-admin { border-bottom: 1px solid var(--border); }
+@media (max-width: 760px) {
+  .manage-head-right { flex-direction: column; align-items: flex-end; gap: 6px; }
 }
