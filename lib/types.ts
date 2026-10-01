@@ -22,6 +22,7 @@ export interface StudentProfile {
   topics: string[]; // 원하는 멘토링 분야 (세부 고민)
   concern: string; // 고민 내용
   admissionPath?: string; // 준비하는 입시 전형 (선택)
+  preferredCampus?: string; // 가고 싶은 대학 위치: "수도권" | "지역" | "" (상관없음)
   availableTimes: string[];
 }
 
@@ -76,6 +77,7 @@ export interface Mentor {
   insight?: MajorInsight; // 전공·대학생활 실제 경험 (구조화)
   admission?: AdmissionInfo; // 입시·성적 정보 (본인 입력)
   intro: string; // 한 줄 소개
+  campus?: "수도권" | "지역"; // 다니는 대학의 위치
   hometown?: string; // 출신 지역 (같은 지역 학생과의 매칭에 사용)
   availableTimes: string[]; // 대략적인 시간대 (매칭 점수용, slots에서 계산)
   slots?: string[]; // 주간 가능 시간표 ("요일-시", lib/schedule.ts 참고)

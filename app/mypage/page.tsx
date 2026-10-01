@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import StatusBadge from "@/components/StatusBadge";
 import VerificationBadge from "@/components/VerificationBadge";
-import { STATUS_LABEL, formatPrice } from "@/lib/data";
+import { STATUS_LABEL, categoryLabel, formatPrice } from "@/lib/data";
 import { formatSession } from "@/lib/schedule";
 import { canChat, resetAll, setRequestStatus, unreadCount, useStore } from "@/lib/store";
 import type { Mentor, MentoringRequest, RequestStatus, VerificationStatus } from "@/lib/types";
@@ -201,7 +201,7 @@ export default function MyPage() {
             <div>
               <strong>내 고민</strong>
               <div className="muted">
-                {myProfile ? `${myProfile.grade} · ${myProfile.region} · ${myProfile.category} — ${myProfile.concern}` : "아직 고민을 입력하지 않았어요."}
+                {myProfile ? `${myProfile.grade} · ${myProfile.region} · ${categoryLabel(myProfile.category)} — ${myProfile.concern}` : "아직 고민을 입력하지 않았어요."}
               </div>
             </div>
             <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>

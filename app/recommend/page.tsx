@@ -4,6 +4,7 @@ import { useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import MentorCard from "@/components/MentorCard";
+import { categoryLabel } from "@/lib/data";
 import { useAiReasons } from "@/lib/ai-reasons";
 import { recommendMentors } from "@/lib/match";
 import { useStore } from "@/lib/store";
@@ -31,7 +32,7 @@ export default function RecommendPage() {
       <h1 className="page-title">당신에게 맞는 멘토를 찾았어요 🎉</h1>
       <p className="page-sub">
         {myProfile.grade} · {myProfile.interests.join(", ")}
-        {myProfile.desiredMajor && ` · ${myProfile.desiredMajor}`} · {myProfile.category} 고민
+        {myProfile.desiredMajor && ` · ${myProfile.desiredMajor}`} · {categoryLabel(myProfile.category)} 고민
         {" "}
         <Link href="/concern" style={{ color: "var(--primary)", fontWeight: 600, marginLeft: 8 }}>
           고민 수정

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ChipSelect from "@/components/ChipSelect";
 import SlotGrid from "@/components/SlotGrid";
-import { ADMISSION_PATHS, ALL_TOPICS, GPA_SCALES, HOMETOWNS, INTERESTS, MENTOR_GRADES, SEED_MENTORS } from "@/lib/data";
+import { ADMISSION_PATHS, ALL_TOPICS, CAMPUS_OPTIONS, GPA_SCALES, HOMETOWNS, INTERESTS, MENTOR_GRADES, SEED_MENTORS, campusOf } from "@/lib/data";
 import { slotsToBands, summarizeSlots } from "@/lib/schedule";
 import { saveMentorProfile, useStore } from "@/lib/store";
 
@@ -23,6 +23,7 @@ export default function MentorProfilePage() {
   const [experience, setExperience] = useState("");
   const [intro, setIntro] = useState("");
   const [hometown, setHometown] = useState("");
+  const [campus, setCampus] = useState("");
   const [satisfaction, setSatisfaction] = useState("");
   const [unknownBefore, setUnknownBefore] = useState("");
   const [hardPart, setHardPart] = useState("");
@@ -53,6 +54,7 @@ export default function MentorProfilePage() {
     setExperience(m.experience);
     setIntro(m.intro);
     setHometown(m.hometown ?? "");
+    setCampus(m.campus ?? campusOf(m.university));
     setSatisfaction(m.insight ? String(m.insight.satisfaction) : "");
     setUnknownBefore(m.insight?.unknownBefore ?? "");
     setHardPart(m.insight?.hardPart ?? "");
@@ -74,7 +76,7 @@ export default function MentorProfilePage() {
   const hsOk = hsGrade.trim() !== "" && hs >= 1 && hs <= 9;
   const gpa = Number(gpaValue);
   const gpaOk = gpaValue.trim() === "" || (gpa > 0 && gpa <= Number(gpaScale));
-  const valid = admissionPath && hsOk && gpaOk && name.trim() && university.trim() && major.trim() && topics.length > 0 && intro.trim() && hometown && slots.length > 0 &&
+  const valid = admissionPath && hsOk && gpaOk && name.trim() && university.trim() && major.trim() && topics.length > 0 && intro.trim() && hometown && campus && slots.length > 0 &&
     satisfaction && unknownBefore.trim() && hardPart.trim() && (!switched || switchReason.trim());
 
   const submit = (e: React.FormEvent) => {
@@ -92,6 +94,7 @@ export default function MentorProfilePage() {
         experience: experience.trim(),
         intro: intro.trim(),
         hometown,
+        campus: campus as "수도권" | "지역",
         admission: {
           path: admissionPath,
           highSchoolGrade: Math.round(hs * 100) / 100,
@@ -157,6 +160,16 @@ export default function MentorProfilePage() {
         <div className="field">
           <label className="label">멘토링 가능 분야</label>
           <ChipSelect options={ALL_TOPICS} value={topics} onChange={setTopics} />
+        </div>
+
+        <div className="field">
+          <label className="label" htmlFor="campus">
+            다니는 대학의 위치 <span className="hint">수도권(서울·경기·인천)인지 지역인지 · 대학 위치를 원하는 학생에게 추천돼요</span>
+          </label>
+          <select id="campus" className="select" value={campus} onChange={(e) => setCampus(e.target.value)}>
+            <option value="">선택해 주세요</option>
+            {CAMPUS_OPTIONS.map((c) => <option key={c} value={c}>{c} 대학</option>)}
+          </select>
         </div>
 
         <div className="field">
