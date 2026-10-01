@@ -75,7 +75,7 @@ export default function LectureRecorder({ requestId, summary, mentorId, mentorNa
       const sf = data.safety;
       if (sf?.flagged) {
         const severity = sf.severity === "urgent" ? "urgent" : "warning";
-        addReport({ requestId, mentorId, mentorName, studentName, severity, types: sf.types, excerpt: sf.excerpt, reason: sf.reason });
+        addReport({ source: "class", requestId, mentorId, mentorName, studentName, severity, types: sf.types, excerpt: sf.excerpt, reason: sf.reason });
         setNotice({ severity, types: sf.types });
       }
     } catch (e) {

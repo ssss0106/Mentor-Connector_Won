@@ -129,6 +129,8 @@ export interface SafetyReport {
   mentorId: string;
   mentorName: string;
   studentName: string;
+  source?: "class" | "chat"; // 수업 녹음에서 감지했는지, 채팅에서 감지했는지
+  senderRole?: "student" | "mentor"; // 채팅일 때 보낸 사람
   severity: "warning" | "urgent";
   types: string[];
   excerpt: string;
