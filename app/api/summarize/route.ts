@@ -5,7 +5,7 @@
 
 import { NextResponse } from "next/server";
 import { UpstreamError, chatJson, fail, limited, openaiBase, upstreamFailure } from "@/lib/server-openai";
-import { SAFETY_TYPES_TEXT, alertAdmin, cleanSafety } from "@/lib/server-safety";
+import { SAFETY_TYPES_TEXT, alertAdmin, checkRules, cleanSafety, mergeSafety } from "@/lib/server-safety";
 
 export const runtime = "nodejs";
 
@@ -104,7 +104,10 @@ export async function POST(req: Request) {
         summary: { overview: "녹음된 말이 너무 적어서 요약할 내용이 없어요.", keyPoints: [], actionItems: [], nextQuestions: [] },
       });
     }
-    const { summary, safety } = await summarize(transcript, key);
+    const result = await summarize(transcript, key);
+    const summary = result.summary;
+    // AI가 놓쳐도 대표적인 욕설·자해 표현은 규칙으로 한 번 더 잡는다
+    const safety = mergeSafety(checkRules(transcript), result.safety);
     if (safety.flagged) await alertAdmin({ source: "수업 녹음", sessionLabel, requestId, safety });
     return NextResponse.json({ summary, safety });
   } catch (e) {

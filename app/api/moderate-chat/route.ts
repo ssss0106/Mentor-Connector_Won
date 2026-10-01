@@ -1,10 +1,10 @@
 // 채팅 메시지 한 건을 점검한다. 메시지는 이미 전송된 뒤에 호출되므로 대화를 막지 않고, 문제가 있으면 운영자에게만 알린다.
-// 전화번호·SNS·만남 유도는 AI 없이도 규칙으로 잡고, 비속어·괴롭힘 등은 OpenAI가 맥락을 보고 판단한다.
+// 전화번호·SNS·만남 유도, 대표적인 욕설·모욕·자해 표현은 AI 없이도 규칙으로 잡고, OpenAI가 있으면 맥락까지 보고 판단한다.
 // 메시지 원문은 저장하지 않고, 문제가 있을 때만 가려진 일부를 돌려준다.
 
 import { NextResponse } from "next/server";
 import { chatJson, fail, limited } from "@/lib/server-openai";
-import { NO_SAFETY_ISSUE, SAFETY_TYPES_TEXT, alertAdmin, cleanSafety, maskPersonal, type Safety } from "@/lib/server-safety";
+import { NO_SAFETY_ISSUE, SAFETY_TYPES_TEXT, alertAdmin, checkRules, cleanSafety, maskPersonal, mergeSafety, type Safety } from "@/lib/server-safety";
 
 export const runtime = "nodejs";
 
@@ -35,20 +35,6 @@ function checkContact(text: string): Safety {
   };
 }
 
-// 규칙 결과와 AI 결과를 합친다 (유형은 합치고 심각도는 높은 쪽을 따른다)
-function merge(a: Safety, b: Safety): Safety {
-  if (!a.flagged) return b;
-  if (!b.flagged) return a;
-  const types = [...new Set([...a.types, ...b.types])].slice(0, 4);
-  return {
-    flagged: true,
-    severity: a.severity === "urgent" || b.severity === "urgent" ? "urgent" : "warning",
-    types,
-    excerpt: b.excerpt || a.excerpt,
-    reason: b.reason || a.reason,
-  };
-}
-
 export async function POST(req: Request) {
   if (limited("chat", req, 60)) return fail("요청이 너무 많아요.", 429);
 
@@ -64,12 +50,13 @@ export async function POST(req: Request) {
   const senderRole = body.senderRole === "mentor" ? "mentor" : "student";
   if (text.length < 2) return NextResponse.json({ safety: NO_SAFETY_ISSUE });
 
-  let safety = checkContact(text);
+  // 연락처·욕설·자해 표현은 규칙으로 먼저 잡고, AI가 있으면 맥락까지 본다
+  let safety = mergeSafety(checkRules(text), checkContact(text));
   const key = process.env.OPENAI_API_KEY;
   if (key) {
     try {
       const parsed = await chatJson(key, CHAT_PROMPT, `<message>\n${text}\n</message>`);
-      safety = merge(safety, cleanSafety(parsed.safety));
+      safety = mergeSafety(safety, cleanSafety(parsed.safety));
     } catch {
       // AI 점검이 실패해도 규칙 점검 결과만으로 계속 진행한다
     }
