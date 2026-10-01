@@ -8,7 +8,7 @@ import StatusBadge from "@/components/StatusBadge";
 import VerificationBadge from "@/components/VerificationBadge";
 import { STATUS_LABEL, formatPrice } from "@/lib/data";
 import { formatSession } from "@/lib/schedule";
-import { canChat, resetAll, setRequestStatus, unreadCount, useStore } from "@/lib/store";
+import { activeSanction, canChat, mentorUnreadFromAdmin, resetAll, setRequestStatus, unreadCount, useStore } from "@/lib/store";
 import type { Mentor, MentoringRequest, RequestStatus, VerificationStatus } from "@/lib/types";
 
 const FLOW: RequestStatus[] = ["pending", "approved", "scheduled", "completed"];
@@ -34,8 +34,9 @@ const NEXT_ACTION: Partial<Record<RequestStatus, { label: string; next: RequestS
   scheduled: { label: "멘토링 완료", next: "completed" },
 };
 
-function RequestItem({ req, mentor, asMentor, unread, reviewed }: { req: MentoringRequest; mentor?: Mentor; asMentor: boolean; unread: number; reviewed: boolean }) {
-  const action = NEXT_ACTION[req.status];
+function RequestItem({ req, mentor, asMentor, unread, reviewed, locked }: { req: MentoringRequest; mentor?: Mentor; asMentor: boolean; unread: number; reviewed: boolean; locked?: boolean }) {
+  // 활동이 제한된 멘토는 신청을 처리할 수 없다
+  const action = locked ? undefined : NEXT_ACTION[req.status];
   return (
     <div className="card req">
       <div className="req-top">
@@ -124,7 +125,8 @@ type Tab = "all" | "upcoming" | "done";
 
 export default function MyPage() {
   const router = useRouter();
-  const { ready, currentUser, myProfile, requests, allMentors, messages, lastRead, allReviews, inquiries } = useStore();
+  const store = useStore();
+  const { ready, currentUser, myProfile, requests, allMentors, messages, lastRead, allReviews, inquiries, adminMessages } = store;
   const [tab, setTab] = useState<Tab>("all");
 
   useEffect(() => {
@@ -135,6 +137,9 @@ export default function MyPage() {
 
   const isMentor = currentUser.role === "mentor";
   const myMentor = isMentor ? allMentors.find((m) => m.id === currentUser.mentorId) : undefined;
+  const sanction = myMentor ? activeSanction(store, myMentor.id) : undefined;
+  const hasAdminThread = !!myMentor && adminMessages.some((m) => m.mentorId === myMentor.id);
+  const adminUnreadCount = myMentor ? mentorUnreadFromAdmin(store, myMentor.id, currentUser.id) : 0;
 
   const mine = requests
     .filter((r) => (isMentor ? r.mentorId === currentUser.mentorId : r.studentId === currentUser.id))
@@ -156,6 +161,25 @@ export default function MyPage() {
       <p className="page-sub">
         {isMentor ? "🎓 대학생 멘토" : "🎒 학생"} · {currentUser.name}님
       </p>
+
+      {sanction && (
+        <div className="card notice notice-warn sanction-banner">
+          <strong>{sanction.type === "banned" ? "계정이 영구 정지됐어요." : `멘토 활동이 ${new Date(sanction.until ?? "").toLocaleDateString("ko-KR")}까지 정지됐어요.`}</strong>
+          <span>사유: {sanction.reason}</span>
+          <span className="muted">정지 기간에는 학생에게 프로필이 보이지 않고, 신청 처리와 채팅을 할 수 없어요. 궁금한 점은 운영팀에 문의해 주세요.</span>
+        </div>
+      )}
+
+      {(sanction || hasAdminThread) && (
+        <div className="card inquiry-entry">
+          <div>
+            <strong>운영팀 채팅</strong>
+            {adminUnreadCount > 0 && <span className="badge inq-new">새 메시지 {adminUnreadCount}</span>}
+            <div className="muted">운영팀이 멘토 활동과 관련해 보낸 메시지를 확인하고 답할 수 있어요.</div>
+          </div>
+          <Link href="/support" className="btn btn-sm">💬 채팅하기</Link>
+        </div>
+      )}
 
       {isMentor ? (
         <div className="card" style={{ marginBottom: 24 }}>
@@ -258,7 +282,7 @@ export default function MyPage() {
       ) : (
         <div className="req-list">
           {shown.map((r) => (
-            <RequestItem key={r.id} req={r} mentor={allMentors.find((m) => m.id === r.mentorId)} asMentor={isMentor} unread={unreadCount({ messages, lastRead }, r.id, currentUser.id)} reviewed={allReviews.some((v) => v.requestId === r.id)} />
+            <RequestItem key={r.id} req={r} mentor={allMentors.find((m) => m.id === r.mentorId)} asMentor={isMentor} unread={unreadCount({ messages, lastRead }, r.id, currentUser.id)} reviewed={allReviews.some((v) => v.requestId === r.id)} locked={isMentor && !!sanction} />
           ))}
         </div>
       )}

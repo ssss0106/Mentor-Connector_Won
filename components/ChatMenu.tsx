@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Avatar from "./Avatar";
-import { canChat, unreadCount, useStore } from "@/lib/store";
+import { canChat, mentorUnreadFromAdmin, unreadCount, useStore } from "@/lib/store";
 
 const timeLabel = (iso: string) => {
   const d = new Date(iso);
@@ -16,7 +16,7 @@ const timeLabel = (iso: string) => {
 };
 
 export default function ChatMenu() {
-  const { currentUser, requests, messages, lastRead, allMentors } = useStore();
+  const { currentUser, requests, messages, lastRead, allMentors, adminMessages } = useStore();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -55,7 +55,12 @@ export default function ChatMenu() {
     })
     .sort((a, b) => b.at.localeCompare(a.at));
 
-  const total = rooms.reduce((sum, r) => sum + r.unread, 0);
+  // 운영팀이 멘토에게 메시지를 보냈으면 운영팀 대화방을 맨 위에 둔다
+  const adminThread = isMentor && currentUser.mentorId ? adminMessages.filter((m) => m.mentorId === currentUser.mentorId) : [];
+  const adminLast = adminThread.at(-1);
+  const adminUnread = adminLast ? mentorUnreadFromAdmin({ adminMessages, lastRead }, currentUser.mentorId!, currentUser.id) : 0;
+
+  const total = rooms.reduce((sum, r) => sum + r.unread, 0) + adminUnread;
 
   return (
     <div className="chat-menu" ref={ref}>
@@ -83,13 +88,28 @@ export default function ChatMenu() {
       {open && (
         <div className="chat-dropdown" role="menu">
           <div className="chat-dropdown-head">채팅</div>
-          {rooms.length === 0 ? (
+          {adminLast && (
+            <Link href="/support" className="chat-room chat-room-admin" onClick={() => setOpen(false)}>
+              <span className="support-avatar" aria-hidden="true">🛡️</span>
+              <div className="chat-room-body">
+                <div className="chat-room-top">
+                  <strong>Menco 운영팀</strong>
+                  <span className="chat-room-time">{timeLabel(adminLast.createdAt)}</span>
+                </div>
+                <div className="chat-room-bottom">
+                  <span className={`chat-room-preview ${adminUnread ? "bold" : ""}`}>{adminLast.from === "mentor" ? "나: " : ""}{adminLast.text}</span>
+                  {adminUnread > 0 && <span className="unread">{adminUnread}</span>}
+                </div>
+              </div>
+            </Link>
+          )}
+          {rooms.length === 0 && !adminLast ? (
             <div className="chat-dropdown-empty">
               아직 채팅방이 없어요.
               <br />
               {isMentor ? "학생의 신청을 승인하면 채팅방이 생겨요." : "멘토가 신청을 승인하면 채팅방이 생겨요."}
             </div>
-          ) : (
+          ) : rooms.length === 0 ? null : (
             <ul className="chat-room-list">
               {rooms.map((r) => (
                 <li key={r.req.id}>

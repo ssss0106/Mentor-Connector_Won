@@ -7,15 +7,17 @@ import SlotGrid from "@/components/SlotGrid";
 import VerificationBadge from "@/components/VerificationBadge";
 import { SESSION_MINUTES, summarizeSlots } from "@/lib/schedule";
 import { MIN_REVIEWS_FOR_AVERAGE, SESSION_PRICE, formatPrice } from "@/lib/data";
-import { isVerifiedMentor, useStore } from "@/lib/store";
+import { activeSanction, isVerifiedMentor, useStore } from "@/lib/store";
 
 export default function MentorDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const { ready, allMentors, currentUser, allReviews } = useStore();
+  const store = useStore();
+  const { ready, allMentors, currentUser, allReviews } = store;
   const found = allMentors.find((m) => m.id === id);
-  // 재학 인증·경력 조회 확인 전인 멘토는 본인만 볼 수 있다
+  // 재학 인증·경력 조회 확인 전이거나 활동이 제한된 멘토는 본인만 볼 수 있다
   const isOwner = !!found && currentUser?.mentorId === found.id;
-  const mentor = found && (isVerifiedMentor(found) || isOwner) ? found : undefined;
+  const sanctioned = !!found && !!activeSanction(store, found.id);
+  const mentor = found && ((isVerifiedMentor(found) && !sanctioned) || isOwner) ? found : undefined;
 
   if (!mentor) {
     if (!ready) return null;
@@ -168,7 +170,11 @@ export default function MentorDetailPage() {
             <li><span>멘토링 비용</span><span>{SESSION_MINUTES}분 1회 {formatPrice(SESSION_PRICE)}</span></li>
             <li><span>온라인 멘토링</span><span>{mentor.online ? "가능" : "불가"}</span></li>
           </ul>
-          {!isVerifiedMentor(mentor) ? (
+          {sanctioned ? (
+            <p className="muted" style={{ margin: 0, textAlign: "center" }}>
+              활동이 제한된 동안에는 학생에게 공개되지 않아요.
+            </p>
+          ) : !isVerifiedMentor(mentor) ? (
             <p className="muted" style={{ margin: 0, textAlign: "center" }}>
               재학 인증과 경력 조회 확인이 끝나면 학생에게 공개돼요.
             </p>
