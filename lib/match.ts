@@ -7,7 +7,7 @@ import { CONCERN_TOPICS } from "./data";
 //   전공을 바꾼 경험 +1 (학생이 "전공 선택"을 고민할 때만: 전공이 안 맞을까 걱정하는 학생에게 도움)
 //   같은 입시 전형을 거침 +2 (학생이 준비하는 전형을 고른 경우). 내신·학점은 점수에 쓰지 않는다.
 //   같은 지역 출신 +2 (지역 청소년이 "같은 처지에서 자란 선배"를 만나도록 추가한 규칙)
-// 추천 순서: 같은 지역 출신 멘토를 먼저 보여 주고, 그 안에서 점수가 높은 순으로 정렬한다.
+// 추천 순서: 같은 지역 출신 멘토를 점수 순으로 최대 3명까지 먼저 보여 주고, 나머지 자리는 지역과 관계없이 점수 순으로 채운다.
 
 export interface ScoreItem {
   label: string;
@@ -20,7 +20,11 @@ export interface MatchResult {
   reasons: string[];
   breakdown: ScoreItem[]; // 점수 항목별 이유 (점수에 마우스를 올리면 보여 준다)
   sameRegion: boolean;
+  regionFirst?: boolean; // 같은 지역 출신이라 앞쪽에 먼저 배치된 멘토
 }
+
+// 같은 지역 출신 멘토를 앞에 먼저 보여 주는 최대 인원
+export const REGION_FIRST_LIMIT = 3;
 
 function majorMatches(desired: string, major: string): boolean {
   const d = desired.replace(/\s|학과|학부|전공|과$/g, "");
@@ -81,9 +85,9 @@ export function scoreMentor(p: StudentProfile, mentor: Mentor): MatchResult {
 }
 
 export function recommendMentors(p: StudentProfile, mentors: Mentor[], limit = 5): MatchResult[] {
-  return mentors
-    .map((m) => scoreMentor(p, m))
-    .filter((r) => r.score > 0)
-    .sort((a, b) => Number(b.sameRegion) - Number(a.sameRegion) || b.score - a.score)
-    .slice(0, limit);
+  const byScore = (a: MatchResult, b: MatchResult) => b.score - a.score;
+  const scored = mentors.map((m) => scoreMentor(p, m)).filter((r) => r.score > 0);
+  const regionFirst = scored.filter((r) => r.sameRegion).sort(byScore).slice(0, REGION_FIRST_LIMIT);
+  const rest = scored.filter((r) => !regionFirst.includes(r)).sort(byScore);
+  return [...regionFirst.map((r) => ({ ...r, regionFirst: true })), ...rest].slice(0, limit);
 }
