@@ -246,7 +246,7 @@ main { min-height: calc(100vh - 140px); }
 .btn.btn-danger:hover { background: #b42318; }
 
 /* ---------- 운영자 페이지 ---------- */
-.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 28px; }
 .stat { display: flex; flex-direction: column; gap: 4px; padding: 16px 20px; }
 .stat span { color: var(--muted); font-size: 13px; }
 .stat strong { font-size: 26px; }
@@ -294,6 +294,17 @@ main { min-height: calc(100vh - 140px); }
 .date-chip:disabled, .time-chip:disabled { opacity: 0.45; cursor: not-allowed; border-color: var(--border); }
 .time-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
 .time-chip { font-size: 15px; font-weight: 600; }
+
+/* ---------- safety alerts ---------- */
+.sev { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; }
+.sev-warning { background: #fff4e5; color: #b45a00; }
+.sev-urgent { background: #fde8e8; color: #c81e1e; }
+.safety-card.urgent { border-color: #f5b5b5; }
+.safety-card.done { opacity: 0.6; }
+.safety-quote { margin: 10px 0 6px; padding: 10px 12px; background: #f7f7fa; border-radius: 8px; font-size: 14px; }
+.safety-notice { margin-top: 10px; padding: 10px 12px; border-radius: 10px; background: #3a2d14; color: #ffd9a0; font-size: 13px; line-height: 1.55; }
+.safety-notice.urgent { background: #3d1c1c; color: #ffc9c9; }
+.safety-help { margin-top: 6px; font-weight: 600; }
 
 /* ---------- admission + reviews ---------- */
 .tag-admit { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px; background: #fff4e5; color: #b45a00; font-size: 12px; font-weight: 600; }

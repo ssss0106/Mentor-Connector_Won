@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from "react";
 import { SEED_MENTORS, SEED_REVIEWS } from "./data";
-import type { ChatMessage, Inquiry, Mentor, MentoringRequest, RequestStatus, StudentProfile, User, Verification, LectureSummary, Review } from "./types";
+import type { ChatMessage, Inquiry, Mentor, MentoringRequest, RequestStatus, StudentProfile, User, Verification, LectureSummary, Review, SafetyReport } from "./types";
 
 const KEY = "mentor-connector:v1";
 const EVENT = "mentor-connector:change";
@@ -18,11 +18,12 @@ interface DB {
   requests: MentoringRequest[];
   messages: ChatMessage[];
   reviews: Review[];
+  reports: SafetyReport[];
   lastRead: Record<string, string>; // "userId:requestId" → 마지막으로 읽은 시각
   inquiries: Inquiry[];
 }
 
-const empty: DB = { users: [], currentUserId: null, profiles: [], mentors: [], requests: [], messages: [], reviews: [], lastRead: {}, inquiries: [] };
+const empty: DB = { users: [], currentUserId: null, profiles: [], mentors: [], requests: [], messages: [], reviews: [], reports: [], lastRead: {}, inquiries: [] };
 
 function load(): DB {
   if (typeof window === "undefined") return empty;
@@ -232,6 +233,21 @@ export function saveSummary(id: string, summary: LectureSummary) {
   update((db) => {
     const r = db.requests.find((x) => x.id === id);
     if (r) r.summary = summary;
+  });
+}
+
+// ---------- 안전 알림 ----------
+
+export function addReport(r: Omit<SafetyReport, "id" | "status" | "createdAt">) {
+  update((db) => {
+    db.reports.push({ ...r, id: uid("sf"), status: "new", createdAt: new Date().toISOString() });
+  });
+}
+
+export function setReportStatus(id: string, status: "reviewed" | "dismissed") {
+  update((db) => {
+    const r = db.reports.find((x) => x.id === id);
+    if (r) r.status = status;
   });
 }
 
