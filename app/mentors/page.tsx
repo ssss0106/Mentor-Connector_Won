@@ -9,7 +9,7 @@ import { useStore } from "@/lib/store";
 // 입시 전형 키워드: 멘토가 거친 전형(admission.path)에 맞춰 고른다
 const ADMISSION_FILTERS: { label: string; test: (path: string) => boolean }[] = [
   { label: "수시", test: (p) => p.startsWith("수시") },
-  { label: "정시", test: (p) => p === "정시" },
+  { label: "정시", test: (p) => p.startsWith("정시") },
   { label: "학생부교과", test: (p) => p.includes("학생부교과") },
   { label: "학생부종합", test: (p) => p.includes("학생부종합") },
   { label: "논술", test: (p) => p.includes("논술") },
