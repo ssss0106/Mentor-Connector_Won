@@ -5,8 +5,8 @@ import Link from "next/link";
 import StatusBadge from "@/components/StatusBadge";
 import VerificationBadge from "@/components/VerificationBadge";
 import { SEED_MENTORS } from "@/lib/data";
-import { isVerifiedMentor, reviewEnrollment, reviewVerification, useStore } from "@/lib/store";
-import type { Mentor, VerificationStatus } from "@/lib/types";
+import { isVerifiedMentor, reviewEnrollment, reviewVerification, setReportStatus, useStore } from "@/lib/store";
+import type { Mentor, SafetyReport, VerificationStatus } from "@/lib/types";
 
 // 운영자 페이지 (시연용)
 // 데이터가 브라우저 localStorage에 있으므로, 멘토가 가입한 브라우저와 같은 브라우저에서 열어야 보인다.
@@ -150,10 +150,37 @@ function ReviewCard({ mentor }: { mentor: Mentor }) {
   );
 }
 
-type Tab = "verify" | "mentors" | "requests";
+function SafetyCard({ report }: { report: SafetyReport }) {
+  const urgent = report.severity === "urgent";
+  return (
+    <div className={`card req safety-card ${urgent ? "urgent" : ""} ${report.status !== "new" ? "done" : ""}`}>
+      <div className="req-top">
+        <div>
+          <span className={`sev ${urgent ? "sev-urgent" : "sev-warning"}`}>{urgent ? "긴급" : "주의"}</span>{" "}
+          <strong>{report.mentorName} 멘토 × {report.studentName} 학생</strong>
+          <div className="muted">{fmt(report.createdAt)} · 신청번호 {report.requestId}</div>
+        </div>
+        {report.status !== "new" && <span className="badge">{report.status === "reviewed" ? "확인 완료" : "오탐 처리"}</span>}
+      </div>
+      <div className="tags" style={{ marginTop: 8 }}>
+        {report.types.map((t) => <span key={t} className="tag">{t}</span>)}
+      </div>
+      <p className="safety-quote">“{report.excerpt || "발언 내용 없음"}”</p>
+      <p className="muted" style={{ margin: 0 }}>{report.reason}</p>
+      {report.status === "new" && (
+        <div className="req-actions">
+          <button className="btn btn-sm btn-ghost" onClick={() => setReportStatus(report.id, "dismissed")}>오탐으로 처리</button>
+          <button className="btn btn-sm" onClick={() => setReportStatus(report.id, "reviewed")}>확인 완료</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+type Tab = "verify" | "safety" | "mentors" | "requests";
 
 export default function AdminPage() {
-  const { ready, mentors, allMentors, requests } = useStore();
+  const { ready, mentors, allMentors, requests, reports } = useStore();
   const [unlocked, setUnlocked] = useState(false);
   const [tab, setTab] = useState<Tab>("verify");
 
@@ -179,8 +206,17 @@ export default function AdminPage() {
   const missingCount = allMentors.filter((m) => statuses(m).includes("not_submitted")).length;
   const isSeed = (m: Mentor) => SEED_MENTORS.some((s) => s.id === m.id);
 
+  const newReports = reports.filter((r) => r.status === "new").length;
+  const sortedReports = [...reports].sort(
+    (a, b) =>
+      Number(a.status !== "new") - Number(b.status !== "new") ||
+      Number(b.severity === "urgent") - Number(a.severity === "urgent") ||
+      b.createdAt.localeCompare(a.createdAt),
+  );
+
   const tabs: { key: Tab; label: string }[] = [
     { key: "verify", label: `인증 서류 확인 (${pendingCount})` },
+    { key: "safety", label: `안전 알림 (${newReports})` },
     { key: "mentors", label: `멘토 전체 (${allMentors.length})` },
     { key: "requests", label: `멘토링 신청 (${requests.length})` },
   ];
@@ -206,6 +242,7 @@ export default function AdminPage() {
         <div className="card stat"><span>인증 완료 멘토</span><strong>{doneCount}</strong></div>
         <div className="card stat"><span>반려 있음</span><strong>{rejectedCount}</strong></div>
         <div className="card stat"><span>서류 미제출 있음</span><strong>{missingCount}</strong></div>
+        <div className="card stat"><span>새 안전 알림</span><strong>{newReports}</strong></div>
       </div>
 
       <div className="tabs">
@@ -228,6 +265,22 @@ export default function AdminPage() {
             {reviewTargets.map((m) => <ReviewCard key={m.id} mentor={m} />)}
           </div>
         ))}
+
+      {tab === "safety" && (
+        <>
+          <p className="muted small" style={{ marginTop: 0 }}>
+            수업 녹음에서 AI가 비속어·괴롭힘·위험 표현 등을 감지하면 여기에 나타나요. AI의 자동 판단이라 오탐이 있을 수 있으니 사람이 확인해 주세요.
+            음성과 전체 원문은 저장하지 않고 문제가 된 발언의 일부만 남아요. 시연 버전에서는 이 브라우저에서 녹음한 알림만 보이고, 서버에 ALERT_WEBHOOK_URL을 설정하면 Slack·Discord로도 알림이 가요.
+          </p>
+          {sortedReports.length === 0 ? (
+            <div className="card empty">감지된 안전 알림이 없어요.</div>
+          ) : (
+            <div className="req-list">
+              {sortedReports.map((r) => <SafetyCard key={r.id} report={r} />)}
+            </div>
+          )}
+        </>
+      )}
 
       {tab === "mentors" && (
         <table className="compare admin-table">

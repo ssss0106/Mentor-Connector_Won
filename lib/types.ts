@@ -122,6 +122,21 @@ export interface Review {
   sample?: boolean; // 시연용 예시 후기
 }
 
+// 수업 녹음에서 AI가 감지한 부적절한 표현에 대한 운영자 알림 (음성·원문은 저장하지 않고 발언 일부만 남긴다)
+export interface SafetyReport {
+  id: string;
+  requestId: string;
+  mentorId: string;
+  mentorName: string;
+  studentName: string;
+  severity: "warning" | "urgent";
+  types: string[];
+  excerpt: string;
+  reason: string;
+  status: "new" | "reviewed" | "dismissed";
+  createdAt: string;
+}
+
 // 멘토링 신청 1건마다 멘토·학생 1:1 채팅방이 하나 생긴다
 export interface ChatMessage {
   id: string;
