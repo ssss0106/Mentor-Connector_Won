@@ -121,7 +121,7 @@ export default function MentorProfilePage() {
       <p className="page-sub">나의 경험이 고민 중인 후배에게 큰 도움이 돼요. 프로필을 바탕으로 학생에게 추천돼요.</p>
       {isSeed && (
         <div className="card muted" style={{ marginBottom: 24 }}>
-          시연용 멘토 계정은 프로필을 수정할 수 없어요. 직접 멘토로 가입하면 프로필을 등록·수정할 수 있어요.
+          운영자가 관리하는 멘토 계정은 프로필을 수정할 수 없어요. 직접 멘토로 가입하면 프로필을 등록·수정할 수 있어요.
         </div>
       )}
 

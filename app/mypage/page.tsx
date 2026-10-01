@@ -268,13 +268,13 @@ export default function MyPage() {
           className="link-btn"
           style={{ fontSize: 13 }}
           onClick={() => {
-            if (confirm("이 브라우저에 저장된 모든 데모 데이터를 삭제할까요?")) {
+            if (confirm("저장된 모든 데이터를 삭제할까요?")) {
               resetAll();
               router.push("/");
             }
           }}
         >
-          데모 데이터 초기화
+          데이터 초기화
         </button>
       </div>
     </div>

@@ -54,6 +54,8 @@ export default function RecommendPage() {
               mentor={r.mentor}
               score={r.score}
               reasons={r.reasons}
+              breakdown={r.breakdown}
+              sameRegion={r.sameRegion}
               story={{ concern: myProfile.concern, ai: ai.reasons[r.mentor.id], aiLoading: ai.status === "loading" }}
             />
           ))}
@@ -64,7 +66,9 @@ export default function RecommendPage() {
         🤖 “왜 이 선배인지” 설명은 AI가 내 고민과 멘토 소개를 읽고 써요. 이때 고민 내용은 OpenAI 서버로 전송되고, 이름과 연락처는 보내지 않아요.
       </p>
       <p className="muted" style={{ marginTop: 8 }}>
-        추천 기준: 관심 분야 일치 +3 · 고민 유형 일치 +3 · 관심 전공 일치 +2 · 경험 분야 일치 +2 · 같은 지역 출신 +2 · 같은 입시 전형 +2 · 전공을 바꾼 경험 +1(전공 선택 고민일 때) · 가능 시간 겹침 +1
+        추천 순서: 같은 지역 출신 멘토를 먼저 보여 주고, 그다음 관심 분야·고민·전공 등이 잘 맞는 순서(점수 순)로 보여 줘요. 점수에 마우스를 올리면 점수를 매긴 이유를 볼 수 있어요.
+        <br />
+        점수 기준: 관심 분야 일치 +3 · 고민 유형 일치 +3 · 관심 전공 일치 +2 · 경험 분야 일치 +2 · 같은 지역 출신 +2 · 같은 입시 전형 +2 · 전공을 바꾼 경험 +1(전공 선택 고민일 때) · 가능 시간 겹침 +1
       </p>
     </div>
   );

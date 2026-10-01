@@ -44,7 +44,7 @@ function SignupForm() {
 
         <div className="field">
           <label className="label" htmlFor="name">
-            이름 <span className="hint">MVP에서는 이름만 받아요 (실명 대신 닉네임도 괜찮아요)</span>
+            이름 <span className="hint">실명 대신 닉네임도 괜찮아요</span>
           </label>
           <input id="name" className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="예: 홍길동" />
         </div>
@@ -74,9 +74,9 @@ function SignupForm() {
         </>
       )}
 
-      <div className="divider">시연용 멘토 계정으로 로그인</div>
+      <div className="divider">멘토 계정으로 로그인</div>
       <p className="muted" style={{ marginTop: 0 }}>
-        학생으로 신청한 뒤, 해당 멘토 계정으로 로그인하면 신청을 승인하는 흐름을 확인할 수 있어요.
+        등록된 멘토 계정으로 로그인해 받은 멘토링 신청을 확인하고 승인할 수 있어요.
       </p>
       <div className="demo-list">
         {SEED_MENTORS.map((m) => (

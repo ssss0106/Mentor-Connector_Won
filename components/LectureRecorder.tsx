@@ -161,7 +161,7 @@ export default function LectureRecorder({ requestId, summary, mentorId, mentorNa
       )}
 
       {error && <div className="cam-error">{error}</div>}
-      <p className="demo-note">시연 화면에서는 이 기기의 마이크로 들리는 소리만 녹음돼요.</p>
+      <p className="demo-note">이 기기의 마이크로 들리는 소리만 녹음돼요.</p>
     </div>
   );
 }

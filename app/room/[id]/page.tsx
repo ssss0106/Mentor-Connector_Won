@@ -172,9 +172,6 @@ export default function RoomPage() {
             studentName={req.studentName}
             sessionLabel={`${mentor.name} 멘토 · ${formatSession(req.date, req.time)}`}
           />
-          <p className="demo-note">
-            시연용 화상회의 화면이에요. 실제로 상대방과 연결되지 않으며, 카메라 영상은 이 기기 밖으로 전송되지 않아요.
-          </p>
         </aside>
       </div>
     </div>

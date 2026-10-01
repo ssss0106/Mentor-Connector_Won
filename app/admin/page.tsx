@@ -304,7 +304,7 @@ export default function AdminPage() {
     <div className="container page">
       <h1 className="page-title">운영자 페이지</h1>
       <p className="page-sub">
-        시연용 운영자 화면이에요. 이 브라우저에 저장된 데이터만 보여요.{" "}
+        멘토 인증, 안전 알림, 문의·신고를 관리하는 운영자 화면이에요.{" "}
         <button
           className="link-btn"
           onClick={() => {
@@ -349,7 +349,7 @@ export default function AdminPage() {
         <>
           <p className="muted small" style={{ marginTop: 0 }}>
             수업 녹음과 채팅에서 AI가 비속어·괴롭힘·위험 표현, 외부 연락 유도 등을 감지하면 여기에 나타나요. AI의 자동 판단이라 오탐이 있을 수 있으니 사람이 확인해 주세요.
-            음성과 전체 원문은 저장하지 않고 문제가 된 발언의 일부만 남아요. 시연 버전에서는 이 브라우저에서 녹음한 알림만 보이고, 서버에 ALERT_WEBHOOK_URL을 설정하면 Slack·Discord로도 알림이 가요.
+            음성과 전체 원문은 저장하지 않고 문제가 된 발언의 일부만 남아요. 서버에 ALERT_WEBHOOK_URL을 설정하면 Slack·Discord로도 알림이 가요.
           </p>
           {sortedReports.length === 0 ? (
             <div className="card empty">감지된 안전 알림이 없어요.</div>
@@ -371,7 +371,7 @@ export default function AdminPage() {
               <tr key={m.id}>
                 <td><Link href={`/mentors/${m.id}`}>{m.name}</Link></td>
                 <td>{m.university} · {m.major}</td>
-                <td>{isSeed(m) ? "시연용 가상 멘토" : "가입 멘토"}</td>
+                <td>{isSeed(m) ? "기존 멘토" : "가입 멘토"}</td>
                 <td><VerificationBadge status={m.enrollment.status} kind="enrollment" /></td>
                 <td><VerificationBadge status={m.verification.status} /></td>
               </tr>
