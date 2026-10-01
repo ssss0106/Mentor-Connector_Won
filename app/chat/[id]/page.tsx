@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import Avatar from "@/components/Avatar";
 import StatusBadge from "@/components/StatusBadge";
+import { moderateChatMessage } from "@/lib/moderate-chat";
 import { formatSession } from "@/lib/schedule";
 import { canChat, markChatRead, sendMessage, useStore } from "@/lib/store";
 
@@ -61,6 +62,16 @@ export default function ChatPage() {
     e?.preventDefault();
     if (!trimmed || blocked || !open) return;
     sendMessage(req.id, currentUser, trimmed);
+    // 전송은 막지 않고, 보낸 뒤에 안전 점검을 한다
+    void moderateChatMessage({
+      text: trimmed,
+      requestId: req.id,
+      sessionLabel: `${mentor.name} 멘토 · ${formatSession(req.date, req.time)}`,
+      senderRole: isMentor ? "mentor" : "student",
+      mentorId: mentor.id,
+      mentorName: mentor.name,
+      studentName: req.studentName,
+    });
     setText("");
   };
 
@@ -80,6 +91,8 @@ export default function ChatPage() {
 
       <div className="chat-notice">
         전화번호나 SNS 아이디 같은 개인 연락처는 공유하지 말고, 대화는 이 채팅방에서만 해 주세요.
+        <br />
+        <span className="muted">🛡️ 안전을 위해 보낸 메시지는 AI(OpenAI)로 점검돼요. 비속어·괴롭힘·외부 연락 유도가 감지되면 해당 메시지의 일부가 운영자에게 전달될 수 있어요.</span>
         <br />
         <span className="muted">시연 버전: 대화는 이 브라우저에만 저장돼요. 상대방 계정으로 로그인하면 답장할 수 있어요.</span>
       </div>

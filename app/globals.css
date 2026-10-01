@@ -299,6 +299,7 @@ main { min-height: calc(100vh - 140px); }
 .sev { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; }
 .sev-warning { background: #fff4e5; color: #b45a00; }
 .sev-urgent { background: #fde8e8; color: #c81e1e; }
+.sev-source { background: #eef0ff; color: var(--primary); }
 .safety-card.urgent { border-color: #f5b5b5; }
 .safety-card.done { opacity: 0.6; }
 .safety-quote { margin: 10px 0 6px; padding: 10px 12px; background: #f7f7fa; border-radius: 8px; font-size: 14px; }

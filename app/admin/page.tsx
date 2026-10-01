@@ -220,8 +220,12 @@ function SafetyCard({ report }: { report: SafetyReport }) {
       <div className="req-top">
         <div>
           <span className={`sev ${urgent ? "sev-urgent" : "sev-warning"}`}>{urgent ? "긴급" : "주의"}</span>{" "}
+          <span className="sev sev-source">{report.source === "chat" ? "💬 채팅" : "🎙️ 수업 녹음"}</span>{" "}
           <strong>{report.mentorName} 멘토 × {report.studentName} 학생</strong>
-          <div className="muted">{fmt(report.createdAt)} · 신청번호 {report.requestId}</div>
+          <div className="muted">
+            {fmt(report.createdAt)} · 신청번호 {report.requestId}
+            {report.source === "chat" && report.senderRole && ` · ${report.senderRole === "mentor" ? "멘토가" : "학생이"} 보낸 메시지`}
+          </div>
         </div>
         {report.status !== "new" && <span className="badge">{report.status === "reviewed" ? "확인 완료" : "오탐 처리"}</span>}
       </div>
@@ -344,7 +348,7 @@ export default function AdminPage() {
       {tab === "safety" && (
         <>
           <p className="muted small" style={{ marginTop: 0 }}>
-            수업 녹음에서 AI가 비속어·괴롭힘·위험 표현 등을 감지하면 여기에 나타나요. AI의 자동 판단이라 오탐이 있을 수 있으니 사람이 확인해 주세요.
+            수업 녹음과 채팅에서 AI가 비속어·괴롭힘·위험 표현, 외부 연락 유도 등을 감지하면 여기에 나타나요. AI의 자동 판단이라 오탐이 있을 수 있으니 사람이 확인해 주세요.
             음성과 전체 원문은 저장하지 않고 문제가 된 발언의 일부만 남아요. 시연 버전에서는 이 브라우저에서 녹음한 알림만 보이고, 서버에 ALERT_WEBHOOK_URL을 설정하면 Slack·Discord로도 알림이 가요.
           </p>
           {sortedReports.length === 0 ? (
