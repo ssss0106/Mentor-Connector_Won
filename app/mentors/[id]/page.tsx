@@ -166,6 +166,7 @@ export default function MentorDetailPage() {
             <li><span>전공</span><span>{mentor.major}</span></li>
             <li><span>학년</span><span>{mentor.grade}</span></li>
             {mentor.hometown && <li><span>출신 지역</span><span>{mentor.hometown}</span></li>}
+            {mentor.campus && <li><span>대학 위치</span><span>{mentor.campus} 대학</span></li>}
             <li><span>가능 시간</span><span>{mentor.slots?.length ? summarizeSlots(mentor.slots) : mentor.availableTimes.join(", ") || "협의"}</span></li>
             <li><span>멘토링 비용</span><span>{SESSION_MINUTES}분 1회 {formatPrice(SESSION_PRICE)}</span></li>
             <li><span>온라인 멘토링</span><span>{mentor.online ? "가능" : "불가"}</span></li>

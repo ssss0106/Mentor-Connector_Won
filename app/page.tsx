@@ -16,9 +16,9 @@ const REVIEWS = [
     text: "주변에 물어볼 사람이 없었는데, 실제로 배우는 과목과 진로를 듣고 목표가 확실해졌어요.",
   },
   {
-    name: "전남 중3 학생",
-    info: "학습 고민 · 교육학과 멘토",
-    text: "멘토가 직접 썼던 플래너 방법을 알려줘서 한 달째 계획을 지키고 있어요!",
+    name: "전남 고2 학생",
+    info: "대학 선택 고민 · 수의예과 멘토",
+    text: "지역 대학과 수도권 대학 사이에서 고민이었는데, 선배 이야기를 들으니 나만의 기준이 생겼어요.",
   },
   {
     name: "경북 고2 학생",
@@ -28,19 +28,20 @@ const REVIEWS = [
 ];
 
 // 첫 화면 미리보기에 보여줄 추천 결과 예시
-// 공부 방법 고민에 맞는 멘토: 이하늘(공부 습관), 류다인(같은 강원 출신·운동과 공부 병행), 윤서아(학원 없이 영어 공부)
-const HERO_MENTORS = ["m3", "m23", "m7"].map((id) => SEED_MENTORS.find((m) => m.id === id)!).filter(Boolean);
+// 전공 선택 고민에 맞는 멘토: 박서준(같은 강원 출신·심리학과), 김지은(아동청소년학과), 정유나(전공을 바꾼 경험)
+const HERO_MENTORS = ["m2", "m1", "m5"].map((id) => SEED_MENTORS.find((m) => m.id === id)!).filter(Boolean);
 
 const STEPS = [
-  { icon: "/images/step1.svg", title: "고민 입력", desc: "지금 가장 큰 고민을 적어요" },
-  { icon: "/images/step2.svg", title: "맞춤 멘토 추천", desc: "고민을 먼저 겪은 멘토를 찾아드려요" },
+  { icon: "/images/step1.svg", title: "고민 입력", desc: "가고 싶은 대학·전공과 고민을 적어요" },
+  { icon: "/images/step2.svg", title: "맞춤 멘토 추천", desc: "그 길을 먼저 겪은 선배를 찾아드려요" },
   { icon: "/images/step3.svg", title: "1:1 멘토링", desc: `${SESSION_MINUTES}분 온라인으로 이야기해요` },
 ];
 
 const COMPARE = [
   ["과목 중심", "고민 중심"],
   ["선생님을 직접 탐색", "나에게 맞는 멘토 추천"],
-  ["수도권 학원가 중심", "지역 어디서든 온라인으로"],
+  ["사는 곳에 따라 만날 수 있는 선배가 달라요", "지역과 상관없이 같은 조건으로 만나요"],
+  ["입시·전공 정보는 알아서 찾기", "대학·전공을 먼저 겪은 선배의 실제 경험"],
   ["선생님마다 다른 수업료", `모든 멘토 ${SESSION_MINUTES}분 ${formatPrice(SESSION_PRICE)}`],
 ];
 
@@ -57,11 +58,14 @@ export default function Home() {
           <div>
             <span className="hero-eyebrow">지역 청소년 × 대학생 멘토 1:1</span>
             <h1>
-              내 고민을 <em>먼저 경험한</em>
+              어디에 살아도, <em>같은 진학 정보</em>를
               <br />
-              대학생 선배를 만나보세요
+              대학생 선배와 1:1로
             </h1>
-            <p>진로·학습·대학생활 고민, 먼저 겪어 본 멘토에게 온라인으로 물어보세요.</p>
+            <p>
+              대학과 전공을 고르기 전에, 그 길을 먼저 걸은 선배에게 온라인으로 직접 들어보세요.
+              지역과 상관없이 누구나 같은 조건({SESSION_MINUTES}분 {formatPrice(SESSION_PRICE)})으로 만날 수 있어요.
+            </p>
             <div className="hero-actions">
               <Link href={findHref} className="btn">
                 나에게 맞는 멘토 찾기 →
@@ -75,8 +79,8 @@ export default function Home() {
             <div className="preview-concern">
               <Avatar seed="hero-student" size={44} />
               <div>
-                <div className="preview-label">고1 · 강원 · 학습 고민</div>
-                <div className="preview-text">계획을 세워도 오래 못 가요. 나한테 맞는 공부 방법을 찾고 싶어요</div>
+                <div className="preview-label">고1 · 강원 · 진로 고민</div>
+                <div className="preview-text">심리학과에 가고 싶은데, 실제로 뭘 배우는지 궁금해요</div>
               </div>
             </div>
             <div className="preview-arrow">추천 멘토 3명을 찾았어요 ↓</div>
@@ -202,9 +206,9 @@ export default function Home() {
       <section className="lp-cta">
         <div className="container">
           <p>
-            어떤 과목을 누구에게 배울지가 아니라,
+            누가 어디에 살든,
             <br />
-            <em>어떤 고민에 어떤 경험이 필요한지</em>를 연결해요.
+            <em>같은 진학 정보와 같은 접근성</em>을 만들어요.
           </p>
           <Link href={findHref} className="btn">
             나에게 맞는 멘토 찾기 →

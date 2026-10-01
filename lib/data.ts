@@ -19,10 +19,21 @@ export const INTERESTS = [
 ];
 
 export const CONCERN_TOPICS: Record<ConcernCategory, string[]> = {
-  학습: ["공부 방법", "학습 습관", "공부 동기", "과목별 공부 경험"],
   진로: ["진로 탐색", "관심 직업", "전공 선택", "대학 선택"],
   대학생활: ["대학생활", "전공생활", "동아리·대외활동", "대학 입학 후 생활"],
+  학습: ["공부 방법", "학습 습관", "공부 동기", "과목별 공부 경험"],
 };
+
+// 화면에 보여줄 고민 유형 이름. 서비스 초점(진학 전 대학·전공 정보)에 맞춰 "학습"은 "진학 준비"로 부른다.
+export const categoryLabel = (c: ConcernCategory) => (c === "학습" ? "진학 준비" : c);
+
+// 대학 위치: 수도권(서울·경기·인천)인지 지역인지
+export const CAMPUS_OPTIONS = ["수도권", "지역"] as const;
+const CAPITAL_UNIVERSITIES = [
+  "서울대학교", "연세대학교", "고려대학교", "성균관대학교", "한양대학교", "홍익대학교", "한국외국어대학교",
+  "서울예술대학교", "이화여자대학교", "중앙대학교", "서울시립대학교", "경희대학교",
+];
+export const campusOf = (university: string): "수도권" | "지역" => (CAPITAL_UNIVERSITIES.includes(university) ? "수도권" : "지역");
 
 export const ALL_TOPICS = Object.values(CONCERN_TOPICS).flat();
 
@@ -1160,6 +1171,7 @@ function spreadEvenly(list: Mentor[], inGroup: (m: Mentor) => boolean): Mentor[]
 // 시드 멘토의 주간 시간표는 대략적인 시간대에서 예시로 만든다
 export const SEED_MENTORS: Mentor[] = spreadEvenly(RAW_MENTORS, (m) => !!m.admission?.path.includes("농어촌")).map((m) => ({
   ...m,
+  campus: m.campus ?? campusOf(m.university),
   slots: sampleSlots(m.availableTimes),
 }));
 

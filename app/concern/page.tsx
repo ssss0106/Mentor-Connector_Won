@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ChipSelect from "@/components/ChipSelect";
-import { ADMISSION_PATHS, CONCERN_TOPICS, GRADES, INTERESTS, REGIONS, TIMES } from "@/lib/data";
+import { ADMISSION_PATHS, CAMPUS_OPTIONS, CONCERN_TOPICS, GRADES, INTERESTS, REGIONS, TIMES, categoryLabel } from "@/lib/data";
 import { saveStudentProfile, useStore } from "@/lib/store";
 import type { ConcernCategory } from "@/lib/types";
 
 const CATEGORY_DESC: Record<ConcernCategory, string> = {
-  학습: "공부법·습관·동기",
+  학습: "입시·공부법·학습 습관",
   진로: "진로·전공·대학 선택",
   대학생활: "전공·동아리·캠퍼스",
 };
@@ -22,6 +22,7 @@ export default function ConcernPage() {
   const [interests, setInterests] = useState<string[]>([]);
   const [desiredMajor, setDesiredMajor] = useState("");
   const [admissionPath, setAdmissionPath] = useState("");
+  const [preferredCampus, setPreferredCampus] = useState("");
   const [category, setCategory] = useState<ConcernCategory>("진로");
   const [topics, setTopics] = useState<string[]>([]);
   const [concern, setConcern] = useState("");
@@ -35,6 +36,7 @@ export default function ConcernPage() {
     setInterests(myProfile.interests);
     setDesiredMajor(myProfile.desiredMajor);
     setAdmissionPath(myProfile.admissionPath ?? "");
+    setPreferredCampus(myProfile.preferredCampus ?? "");
     setCategory(myProfile.category);
     setTopics(myProfile.topics);
     setConcern(myProfile.concern);
@@ -59,6 +61,7 @@ export default function ConcernPage() {
       interests,
       desiredMajor: desiredMajor.trim(),
       admissionPath,
+      preferredCampus,
       category,
       topics,
       concern: concern.trim(),
@@ -99,6 +102,16 @@ export default function ConcernPage() {
         </div>
 
         <div className="field">
+          <label className="label" htmlFor="campus">
+            가고 싶은 대학 위치 <span className="hint">선택 · 그 위치의 대학에 다니는 선배를 먼저 추천해요</span>
+          </label>
+          <select id="campus" className="select" value={preferredCampus} onChange={(e) => setPreferredCampus(e.target.value)}>
+            <option value="">상관없어요 · 아직 몰라요</option>
+            {CAMPUS_OPTIONS.map((c) => <option key={c} value={c}>{c} 대학</option>)}
+          </select>
+        </div>
+
+        <div className="field">
           <label className="label" htmlFor="adm">준비하는 입시 전형 <span className="hint">선택 · 같은 전형을 겪은 선배를 먼저 추천해요</span></label>
           <select id="adm" className="select" value={admissionPath} onChange={(e) => setAdmissionPath(e.target.value)}>
             <option value="">아직 몰라요</option>
@@ -119,7 +132,7 @@ export default function ConcernPage() {
                   setTopics([]);
                 }}
               >
-                {c}
+                {categoryLabel(c)}
                 <small>{CATEGORY_DESC[c]}</small>
               </button>
             ))}
