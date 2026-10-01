@@ -313,6 +313,16 @@ main { min-height: calc(100vh - 140px); }
 .time-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 8px; }
 .time-chip { font-size: 15px; font-weight: 600; }
 
+/* ---------- shared room badge ---------- */
+.room-badge { position: fixed; left: 12px; bottom: 12px; z-index: 50; font-size: 12px; }
+.room-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: #fff; border: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,.08); cursor: pointer; font-family: inherit; color: var(--text); }
+.room-pill.on { border-color: #9ad5b4; background: #f2fbf6; }
+.room-pill.err { border-color: #f1c58b; background: #fff8ee; }
+.room-panel { margin-bottom: 8px; padding: 12px; width: 260px; background: #fff; border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 6px 20px rgba(0,0,0,.12); display: flex; flex-direction: column; gap: 8px; }
+.room-panel .input { padding: 8px 10px; font-size: 13px; }
+.room-panel p { margin: 0; line-height: 1.5; color: var(--muted); }
+.room-row { display: flex; gap: 6px; }
+
 /* ---------- safety alerts ---------- */
 .sev { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 12px; font-weight: 700; }
 .sev-warning { background: #fff4e5; color: #b45a00; }

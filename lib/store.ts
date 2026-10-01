@@ -5,10 +5,12 @@
 
 import { useEffect, useState } from "react";
 import { SEED_MENTORS, SEED_REVIEWS } from "./data";
+import * as shared from "./shared";
+import type { Doc } from "./shared-ops";
 import type { AdminMessage, ChatMessage, Inquiry, MentorSanction, Mentor, MentoringRequest, RequestStatus, StudentProfile, User, Verification, LectureSummary, Review, SafetyReport } from "./types";
 
 const KEY = "mentor-connector:v1";
-const EVENT = "mentor-connector:change";
+const EVENT = shared.CHANGE_EVENT;
 
 interface DB {
   users: User[];
@@ -28,19 +30,26 @@ interface DB {
 
 const empty: DB = { users: [], currentUserId: null, profiles: [], mentors: [], requests: [], messages: [], reviews: [], reports: [], lastRead: {}, inquiries: [], sanctions: [], adminMessages: [], adminRead: {} };
 
+// 경력 조회 기능 이전에 저장된 멘토는 "서류 미제출" 상태로 본다
+function normalize(db: DB): DB {
+  db.mentors = db.mentors.map((m) => ({
+    ...m,
+    verification: m.verification ?? { status: "not_submitted" },
+    enrollment: m.enrollment ?? { status: "not_submitted" },
+  }));
+  return db;
+}
+
 function load(): DB {
   if (typeof window === "undefined") return empty;
+  // 시연방(공유 모드)이면 서버와 공유하는 데이터를 보여 주고, 로그인한 사용자만 이 브라우저에 따로 둔다
+  if (shared.isShared()) {
+    return normalize({ ...empty, ...(shared.sharedView() as Partial<DB>), currentUserId: shared.getSession() });
+  }
   try {
     const raw = localStorage.getItem(KEY);
     if (!raw) return empty;
-    const db: DB = { ...empty, ...JSON.parse(raw) };
-    // 경력 조회 기능 이전에 저장된 멘토는 "서류 미제출" 상태로 본다
-    db.mentors = db.mentors.map((m) => ({
-      ...m,
-      verification: m.verification ?? { status: "not_submitted" },
-      enrollment: m.enrollment ?? { status: "not_submitted" },
-    }));
-    return db;
+    return normalize({ ...empty, ...JSON.parse(raw) });
   } catch {
     return empty;
   }
@@ -52,6 +61,13 @@ function save(db: DB) {
 }
 
 function update(fn: (db: DB) => void) {
+  if (shared.isShared()) {
+    const before = load();
+    const after = structuredClone(before);
+    fn(after);
+    shared.sharedCommit(before as unknown as Doc, after as unknown as Doc);
+    return;
+  }
   const db = load();
   fn(db);
   save(db);
@@ -367,7 +383,9 @@ export function markInquiryAnswersRead(userId: string) {
 }
 
 export function resetAll() {
-  localStorage.removeItem(KEY);
+  // 시연방(공유 모드)에서는 이 방의 데이터만 지우고, 이 브라우저에 따로 저장된 기존 데이터는 건드리지 않는다
+  if (shared.isShared()) shared.resetRoom();
+  else localStorage.removeItem(KEY);
   Object.keys(localStorage)
     .filter((k) => k.startsWith("mentor-connector:reasons:"))
     .forEach((k) => localStorage.removeItem(k));
