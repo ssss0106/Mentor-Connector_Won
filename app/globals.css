@@ -641,3 +641,34 @@ main { min-height: calc(100vh - 140px); }
 @media (max-width: 760px) {
   .manage-head-right { flex-direction: column; align-items: flex-end; gap: 6px; }
 }
+
+/* ---------- 보호자 알림 · 이어서 멘토링 · 멘티 찾기 ---------- */
+.guardian-row { display: flex; gap: 8px; }
+.guardian-row .select { width: 140px; flex-shrink: 0; }
+.guardian-info { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border); font-size: 14px; }
+.guardian-info > span:first-child { font-weight: 700; }
+.guardian-status { margin-top: 12px; padding: 12px 14px; border-radius: 10px; font-size: 14px; display: flex; flex-direction: column; gap: 10px; }
+.guardian-status.sent { background: #eef8f1; color: #1f6a35; }
+.guardian-status.missing { background: #fff4e5; color: #9a4d00; }
+.guardian-status-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
+.guardian-status .input, .guardian-status .textarea { background: #fff; }
+.req-labels { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.apply-context { display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px; border-left: 4px solid var(--primary); }
+.apply-offer-msg { margin: 0; white-space: pre-wrap; }
+.offer-list { margin-bottom: 24px; }
+.offer-list .section-title { margin-top: 0; display: flex; align-items: center; gap: 8px; }
+.offer-card { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; border: 1.5px solid var(--primary); }
+.offer-head { display: flex; gap: 12px; align-items: center; }
+.offer-msg { margin: 0; white-space: pre-wrap; }
+.mentee-filters { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; }
+.mentee-filters .select { width: auto; }
+.mentee-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+.mentee-card { display: flex; flex-direction: column; gap: 10px; }
+.mentee-concern { margin: 0; line-height: 1.6; }
+.mentee-meta { list-style: none; margin: 0; padding: 0; font-size: 13px; display: flex; flex-direction: column; gap: 2px; }
+.tag-soft { background: var(--primary-soft); color: var(--primary); }
+.offer-status { font-size: 14px; font-weight: 700; color: var(--primary); }
+.chat-room-btn { width: 100%; background: none; border: none; font: inherit; text-align: left; cursor: pointer; color: inherit; }
+@media (max-width: 760px) {
+  .mentee-grid { grid-template-columns: 1fr; }
+}

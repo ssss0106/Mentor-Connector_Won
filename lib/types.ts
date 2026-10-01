@@ -24,6 +24,9 @@ export interface StudentProfile {
   admissionPath?: string; // 준비하는 입시 전형 (선택)
   preferredCampus?: string; // 가고 싶은 대학 위치: "수도권" | "지역" | "" (상관없음)
   availableTimes: string[];
+  guardianPhone?: string; // 안전 알림을 받을 보호자 휴대폰 번호
+  guardianRelation?: string; // 어머니 · 아버지 · 그 외 보호자
+  openToMentors?: boolean; // 멘토가 이름 없이 고민을 보고 먼저 제안할 수 있게 허용
 }
 
 // 멘토 경력 조회 확인 상태: 미제출 → 확인 대기 → 확인 완료 / 반려
@@ -108,6 +111,8 @@ export interface MentoringRequest {
   createdAt: string;
   price?: number; // 신청 당시의 이용료(원)
   summary?: LectureSummary;
+  followUpOf?: string; // 같은 멘토와 이어서 하는 멘토링이면 지난 신청 id
+  offerId?: string; // 멘토의 제안을 받아 신청했으면 제안 id
 }
 
 // 완료된 멘토링 1건마다 학생이 후기를 1개 남길 수 있다
@@ -193,4 +198,27 @@ export interface AdminMessage {
   from: "admin" | "mentor";
   text: string;
   createdAt: string;
+}
+
+// 안전 알림이 생기면 보호자에게 보내는 문자 알림
+export interface GuardianAlert {
+  id: string;
+  reportId: string;
+  studentId: string;
+  phone: string;
+  relation?: string;
+  message: string;
+  sentBy: "auto" | "admin";
+  createdAt: string;
+}
+
+// 멘토가 멘티에게 먼저 보내는 멘토링 제안 (멘티 실명은 멘토에게 보이지 않는다)
+export interface MentorOffer {
+  id: string;
+  mentorId: string;
+  studentId: string;
+  message: string;
+  status: "pending" | "accepted" | "declined";
+  createdAt: string;
+  respondedAt?: string;
 }

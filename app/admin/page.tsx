@@ -5,15 +5,18 @@ import Link from "next/link";
 import StatusBadge from "@/components/StatusBadge";
 import VerificationBadge from "@/components/VerificationBadge";
 import { SEED_MENTORS } from "@/lib/data";
+import { ADMIN_OPEN_CHAT, ADMIN_UNLOCK_KEY } from "@/components/AdminChatMenu";
 import { MentorManagePanel, SanctionBadge } from "@/components/AdminMentorManage";
-import { activeSanction, adminUnread, answerInquiry, isVerifiedMentor, reviewEnrollment, reviewVerification, setReportStatus, useStore } from "@/lib/store";
+import { PHONE_RE, activeSanction, adminUnread, answerInquiry, guardianMessage, guardianOf, maskPhone, sendGuardianAlert, isVerifiedMentor, reviewEnrollment, reviewVerification, setReportStatus, useStore } from "@/lib/store";
 import type { Inquiry, Mentor, SafetyReport, VerificationStatus } from "@/lib/types";
 
 // 운영자 페이지 (시연용)
 // 데이터가 브라우저 localStorage에 있으므로, 멘토가 가입한 브라우저와 같은 브라우저에서 열어야 보인다.
 // 아래 코드는 화면 진입을 막는 시연용 장치일 뿐 실제 보안 수단이 아니다.
 const ADMIN_CODE = process.env.NEXT_PUBLIC_ADMIN_CODE || "admin";
-const UNLOCK_KEY = "mentor-connector:admin";
+const UNLOCK_KEY = ADMIN_UNLOCK_KEY;
+// 헤더의 운영자 채팅 아이콘이 잠금 상태 변화를 알 수 있게 한다
+const notifyHeader = () => window.dispatchEvent(new Event("mentor-connector:change"));
 
 const fmt = (iso?: string) =>
   iso ? new Date(iso).toLocaleString("ko-KR", { dateStyle: "short", timeStyle: "short" }) : "-";
@@ -25,6 +28,7 @@ function AdminGate({ onUnlock }: { onUnlock: () => void }) {
     e.preventDefault();
     if (code === ADMIN_CODE) {
       sessionStorage.setItem(UNLOCK_KEY, "1");
+      notifyHeader();
       onUnlock();
     } else setError(true);
   };
@@ -219,6 +223,60 @@ function InquiryAdminCard({ q, requestLabel, onManage }: { q: Inquiry; requestLa
   );
 }
 
+// 안전 알림이 보호자에게 전달됐는지 보여 주고, 안 갔으면 운영자가 직접 보낸다
+function GuardianStatus({ report }: { report: SafetyReport }) {
+  const store = useStore();
+  const alerts = store.guardianAlerts.filter((a) => a.reportId === report.id);
+  const target = guardianOf(store, report);
+  const [open, setOpen] = useState(false);
+  const [phone, setPhone] = useState(target?.phone ?? "");
+  const [message, setMessage] = useState(guardianMessage(report));
+  const last = alerts.at(-1);
+  const phoneOk = PHONE_RE.test(phone.trim());
+
+  return (
+    <div className={`guardian-status ${last ? "sent" : "missing"}`}>
+      <div className="guardian-status-head">
+        {last ? (
+          <span>
+            ✓ <strong>보호자 알림 발송됨</strong> · {last.relation ?? "보호자"} {maskPhone(last.phone)} · {fmt(last.createdAt)} ·{" "}
+            {last.sentBy === "auto" ? "자동 발송" : "운영자 발송"}
+            {alerts.length > 1 && ` (총 ${alerts.length}회)`}
+          </span>
+        ) : (
+          <span>
+            ⚠ <strong>보호자 알림 미발송</strong> · {!target ? "연결된 멘토링 정보가 없어요" : !target.phone ? "보호자 연락처가 등록되지 않았어요" : "발송 기록이 없어요"}
+          </span>
+        )}
+        {!open && (
+          <button className={`btn btn-sm ${last ? "btn-ghost" : ""}`} onClick={() => setOpen(true)}>
+            {last ? "다시 보내기" : "보호자에게 직접 보내기"}
+          </button>
+        )}
+      </div>
+      {open && (
+        <div className="reject-box">
+          <input className="input" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="보호자 휴대폰 번호 (010-1234-5678)" aria-label="보호자 휴대폰 번호" />
+          <textarea className="textarea" value={message} onChange={(e) => setMessage(e.target.value)} aria-label="보낼 문자 내용" />
+          <div className="req-actions">
+            <button className="btn btn-sm btn-ghost" onClick={() => setOpen(false)}>취소</button>
+            <button
+              className="btn btn-sm"
+              disabled={!phoneOk || !message.trim()}
+              onClick={() => {
+                sendGuardianAlert(report.id, phone.trim(), message.trim());
+                setOpen(false);
+              }}
+            >
+              문자 보내기
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function SafetyCard({ report, onManage }: { report: SafetyReport; onManage: () => void }) {
   const urgent = report.severity === "urgent";
   return (
@@ -240,6 +298,7 @@ function SafetyCard({ report, onManage }: { report: SafetyReport; onManage: () =
       </div>
       <p className="safety-quote">“{report.excerpt || "발언 내용 없음"}”</p>
       <p className="muted" style={{ margin: 0 }}>{report.reason}</p>
+      <GuardianStatus report={report} />
       <div className="req-actions">
         <button className="btn btn-sm btn-outline" onClick={onManage}>멘토 활동 관리 →</button>
         {report.status === "new" && (
@@ -262,6 +321,7 @@ export default function AdminPage() {
   const [tab, setTab] = useState<Tab>("verify");
   const [managed, setManaged] = useState<string | null>(null);
   const [mentorQuery, setMentorQuery] = useState("");
+  const [chatReq, setChatReq] = useState({ id: "", n: 0 });
 
   // 신고·안전 알림에서 "멘토 활동 관리"를 누르면 멘토 관리 탭으로 이동한다
   const manage = (mentorId?: string) => {
@@ -273,6 +333,19 @@ export default function AdminPage() {
 
   useEffect(() => {
     setUnlocked(sessionStorage.getItem(UNLOCK_KEY) === "1");
+  }, []);
+
+  // 헤더의 채팅 목록에서 멘토를 누르면 그 멘토의 관리 창을 채팅이 열린 채로 띄운다
+  useEffect(() => {
+    const onOpen = (e: Event) => {
+      const id = (e as CustomEvent<string>).detail;
+      setManaged(id);
+      setTab("mentors");
+      setChatReq((c) => ({ id, n: c.n + 1 }));
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+    window.addEventListener(ADMIN_OPEN_CHAT, onOpen);
+    return () => window.removeEventListener(ADMIN_OPEN_CHAT, onOpen);
   }, []);
 
   if (!ready) return null;
@@ -317,6 +390,7 @@ export default function AdminPage() {
   );
   const mentorOfRequest = (id?: string) => requests.find((x) => x.id === id)?.mentorId;
   const sanctionedCount = allMentors.filter((m) => activeSanction(store, m.id)).length;
+  const guardianMissing = reports.filter((r) => r.status !== "dismissed" && !store.guardianAlerts.some((a) => a.reportId === r.id)).length;
   // 신고·알림이 많은 멘토와 안 읽은 채팅이 있는 멘토를 위로
   const issueCount = (id: string) =>
     reports.filter((r) => r.mentorId === id && r.status === "new").length +
@@ -339,6 +413,7 @@ export default function AdminPage() {
           className="link-btn"
           onClick={() => {
             sessionStorage.removeItem(UNLOCK_KEY);
+            notifyHeader();
             setUnlocked(false);
           }}
         >
@@ -353,6 +428,7 @@ export default function AdminPage() {
         <div className="card stat"><span>서류 미제출 있음</span><strong>{missingCount}</strong></div>
         <div className="card stat"><span>새 안전 알림</span><strong>{newReports}</strong></div>
         <div className="card stat"><span>활동 제한 멘토</span><strong>{sanctionedCount}</strong></div>
+        <div className="card stat"><span>보호자 알림 미발송</span><strong>{guardianMissing}</strong></div>
       </div>
 
       <div className="tabs">
@@ -380,7 +456,7 @@ export default function AdminPage() {
         <>
           <p className="muted small" style={{ marginTop: 0 }}>
             수업 녹음과 채팅에서 AI가 비속어·괴롭힘·위험 표현, 외부 연락 유도 등을 감지하면 여기에 나타나요. AI의 자동 판단이라 오탐이 있을 수 있으니 사람이 확인해 주세요.
-            음성과 전체 원문은 저장하지 않고 문제가 된 발언의 일부만 남아요. 서버에 ALERT_WEBHOOK_URL을 설정하면 Slack·Discord로도 알림이 가요.
+            음성과 전체 원문은 저장하지 않고 문제가 된 발언의 일부만 남아요. 학생이 보호자 연락처를 등록했다면 감지 즉시 보호자에게 문자 알림이 가고, 발송되지 않은 알림은 여기서 직접 보낼 수 있어요. 서버에 ALERT_WEBHOOK_URL을 설정하면 Slack·Discord로도 알림이 가요.
           </p>
           {sortedReports.length === 0 ? (
             <div className="card empty">감지된 안전 알림이 없어요.</div>
@@ -394,7 +470,9 @@ export default function AdminPage() {
 
       {tab === "mentors" && (
         <>
-          {managed && <MentorManagePanel key={managed} mentorId={managed} onClose={() => setManaged(null)} />}
+          {managed && (
+            <MentorManagePanel key={`${managed}-${chatReq.n}`} mentorId={managed} openChat={chatReq.id === managed} onClose={() => setManaged(null)} />
+          )}
           <input className="input manage-search" value={mentorQuery} onChange={(e) => setMentorQuery(e.target.value)}
             placeholder="이름·대학·전공으로 멘토 찾기" aria-label="멘토 검색" />
           <table className="compare admin-table">

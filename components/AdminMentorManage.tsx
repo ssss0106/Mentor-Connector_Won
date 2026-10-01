@@ -80,13 +80,13 @@ function AdminChat({ mentorId, mentorName }: { mentorId: string; mentorName: str
   );
 }
 
-export function MentorManagePanel({ mentorId, onClose }: { mentorId: string; onClose: () => void }) {
+export function MentorManagePanel({ mentorId, onClose, openChat = false }: { mentorId: string; onClose: () => void; openChat?: boolean }) {
   const store = useStore();
   const { allMentors, sanctions, reports, inquiries, requests } = store;
   const mentor = allMentors.find((m) => m.id === mentorId);
   const [days, setDays] = useState(SUSPEND_DAYS[1]);
   const [reason, setReason] = useState("");
-  const [showChat, setShowChat] = useState(false);
+  const [showChat, setShowChat] = useState(openChat);
   if (!mentor) return null;
 
   const current = activeSanction(store, mentorId);
