@@ -5,8 +5,8 @@ import Link from "next/link";
 import StatusBadge from "@/components/StatusBadge";
 import VerificationBadge from "@/components/VerificationBadge";
 import { SEED_MENTORS } from "@/lib/data";
-import { isVerifiedMentor, reviewEnrollment, reviewVerification, useStore } from "@/lib/store";
-import type { Mentor, VerificationStatus } from "@/lib/types";
+import { answerInquiry, isVerifiedMentor, reviewEnrollment, reviewVerification, useStore } from "@/lib/store";
+import type { Inquiry, Mentor, VerificationStatus } from "@/lib/types";
 
 // 운영자 페이지 (시연용)
 // 데이터가 브라우저 localStorage에 있으므로, 멘토가 가입한 브라우저와 같은 브라우저에서 열어야 보인다.
@@ -150,10 +150,73 @@ function ReviewCard({ mentor }: { mentor: Mentor }) {
   );
 }
 
-type Tab = "verify" | "mentors" | "requests";
+// 신고 처리 결과
+const DISPOSITIONS = ["경고 조치", "멘토링 활동 정지", "계정 영구 정지", "조치 없음 (사실 확인 불가)", "기타 조치"];
+
+function InquiryAdminCard({ q, requestLabel }: { q: Inquiry; requestLabel?: string }) {
+  const [editing, setEditing] = useState(q.status === "open");
+  const [answer, setAnswer] = useState(q.answer ?? "");
+  const [disposition, setDisposition] = useState(q.disposition ?? "");
+  const isReport = q.type === "report";
+  const valid = answer.trim() && (!isReport || disposition);
+
+  return (
+    <div className={`card req ${isReport && q.status === "open" ? "inq-urgent" : ""}`}>
+      <div className="req-top">
+        <div className="inquiry-tags">
+          <span className={`badge ${isReport ? "inq-report" : "inq-question"}`}>{isReport ? "신고" : "문의"}</span>
+          <span className="muted">{q.category}</span>
+        </div>
+        <span className={`badge ${q.status === "answered" ? "inq-done" : "inq-wait"}`}>{q.status === "answered" ? "답변 완료" : "답변 대기"}</span>
+      </div>
+      <strong>{q.title}</strong>
+      <p className="inquiry-content">{q.content}</p>
+      <ul className="info-list admin-info">
+        <li><span>작성자</span><span>{q.userName} ({q.role === "mentor" ? "멘토" : "학생"})</span></li>
+        <li><span>작성 일시</span><span>{fmt(q.createdAt)}</span></li>
+        {requestLabel && <li><span>관련 멘토링</span><span>{requestLabel}</span></li>}
+        {q.targetName && <li><span>신고 대상</span><span>{q.targetName}</span></li>}
+        {q.requestedAction && <li><span>요청한 처분</span><span>{q.requestedAction}</span></li>}
+      </ul>
+
+      {editing ? (
+        <div className="reject-box">
+          {isReport && (
+            <select className="select" value={disposition} onChange={(e) => setDisposition(e.target.value)} aria-label="처리 결과">
+              <option value="">처리 결과를 선택해 주세요</option>
+              {DISPOSITIONS.map((d) => <option key={d}>{d}</option>)}
+            </select>
+          )}
+          <textarea className="textarea" value={answer} onChange={(e) => setAnswer(e.target.value)}
+            placeholder={isReport ? "확인한 내용과 조치를 신고한 사람에게 안내해 주세요." : "문의에 대한 답변을 적어 주세요."} />
+          <div className="req-actions">
+            {q.status === "answered" && <button className="btn btn-sm btn-ghost" onClick={() => setEditing(false)}>취소</button>}
+            <button className="btn btn-sm" disabled={!valid} onClick={() => { answerInquiry(q.id, answer.trim(), isReport ? disposition : undefined); setEditing(false); }}>
+              답변 등록
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="inquiry-answer">
+          <div className="inquiry-answer-head">
+            <strong>등록한 답변</strong>
+            <span className="muted">{fmt(q.answeredAt)} · {q.answerReadAt ? "작성자 확인함" : "작성자 미확인"}</span>
+          </div>
+          {q.disposition && <div className="inquiry-disposition">처리 결과 · <strong>{q.disposition}</strong></div>}
+          <p>{q.answer}</p>
+          <div className="req-actions">
+            <button className="btn btn-sm btn-ghost" onClick={() => setEditing(true)}>답변 수정</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+type Tab = "verify" | "mentors" | "requests" | "inquiries";
 
 export default function AdminPage() {
-  const { ready, mentors, allMentors, requests } = useStore();
+  const { ready, mentors, allMentors, requests, inquiries } = useStore();
   const [unlocked, setUnlocked] = useState(false);
   const [tab, setTab] = useState<Tab>("verify");
 
@@ -183,7 +246,19 @@ export default function AdminPage() {
     { key: "verify", label: `인증 서류 확인 (${pendingCount})` },
     { key: "mentors", label: `멘토 전체 (${allMentors.length})` },
     { key: "requests", label: `멘토링 신청 (${requests.length})` },
+    { key: "inquiries", label: `문의·신고 (${inquiries.filter((q) => q.status === "open").length})` },
   ];
+  // 답변 대기 → 신고 우선 → 최신순
+  const sortedInquiries = [...inquiries].sort(
+    (a, b) =>
+      Number(a.status === "answered") - Number(b.status === "answered") ||
+      Number(a.type !== "report") - Number(b.type !== "report") ||
+      b.createdAt.localeCompare(a.createdAt),
+  );
+  const requestLabel = (id?: string) => {
+    const r = requests.find((x) => x.id === id);
+    return r ? `${r.studentName} 학생 ↔ ${allMentors.find((m) => m.id === r.mentorId)?.name ?? "-"} 멘토 · ${r.date} ${r.time}` : undefined;
+  };
 
   return (
     <div className="container page">
@@ -268,6 +343,14 @@ export default function AdminPage() {
               ))}
             </tbody>
           </table>
+        ))}
+      {tab === "inquiries" &&
+        (sortedInquiries.length === 0 ? (
+          <div className="card empty">들어온 문의가 없어요.</div>
+        ) : (
+          <div className="req-list">
+            {sortedInquiries.map((q) => <InquiryAdminCard key={q.id} q={q} requestLabel={requestLabel(q.requestId)} />)}
+          </div>
         ))}
     </div>
   );

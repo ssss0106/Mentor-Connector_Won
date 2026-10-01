@@ -124,7 +124,7 @@ type Tab = "all" | "upcoming" | "done";
 
 export default function MyPage() {
   const router = useRouter();
-  const { ready, currentUser, myProfile, requests, allMentors, messages, lastRead, allReviews } = useStore();
+  const { ready, currentUser, myProfile, requests, allMentors, messages, lastRead, allReviews, inquiries } = useStore();
   const [tab, setTab] = useState<Tab>("all");
 
   useEffect(() => {
@@ -213,6 +213,25 @@ export default function MyPage() {
           </div>
         </div>
       )}
+
+      {(() => {
+        const myInquiries = inquiries.filter((q) => q.userId === currentUser.id);
+        const newAnswers = myInquiries.filter((q) => q.answer && !q.answerReadAt).length;
+        const waiting = myInquiries.filter((q) => q.status === "open").length;
+        return (
+          <div className="card inquiry-entry">
+            <div>
+              <strong>문의하기</strong>
+              {newAnswers > 0 && <span className="badge inq-new">새 답변 {newAnswers}</span>}
+              <div className="muted">
+                궁금한 점이나 멘토링 중 겪은 피해를 운영자에게 알려 주세요.
+                {myInquiries.length > 0 && ` 내 문의 ${myInquiries.length}건 · 답변 대기 ${waiting}건`}
+              </div>
+            </div>
+            <Link href="/inquiry" className="btn btn-sm">문의하기</Link>
+          </div>
+        );
+      })()}
 
       <div className="tabs">
         {tabs.map((t) => (
