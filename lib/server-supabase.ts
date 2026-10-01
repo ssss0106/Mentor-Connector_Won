@@ -3,7 +3,8 @@
 
 import type { Doc } from "./shared-ops";
 
-const base = () => process.env.SUPABASE_URL?.replace(/\/+$/, "");
+// Project URL 끝에 /rest/v1/ 까지 붙여 넣어도 동작하게 정리한다
+const base = () => process.env.SUPABASE_URL?.trim().replace(/\/+$/, "").replace(/\/rest\/v1$/, "");
 const key = () => process.env.SUPABASE_SECRET_KEY;
 
 export const supabaseConfigured = () => !!(base() && key());

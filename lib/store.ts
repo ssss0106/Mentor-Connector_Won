@@ -7,7 +7,8 @@ import { useEffect, useState } from "react";
 import { SEED_MENTORS, SEED_REVIEWS } from "./data";
 import * as shared from "./shared";
 import type { Doc } from "./shared-ops";
-import type { AdminMessage, ChatMessage, Inquiry, MentorSanction, Mentor, MentoringRequest, RequestStatus, StudentProfile, User, Verification, LectureSummary, Review, SafetyReport } from "./types";
+import { SEED_STUDENTS } from "./seed-students";
+import type { AdminMessage, ChatMessage, GuardianAlert, Inquiry, MentorOffer, MentorSanction, Mentor, MentoringRequest, RequestStatus, StudentProfile, User, Verification, LectureSummary, Review, SafetyReport } from "./types";
 
 const KEY = "mentor-connector:v1";
 const EVENT = shared.CHANGE_EVENT;
@@ -26,9 +27,11 @@ interface DB {
   sanctions: MentorSanction[];
   adminMessages: AdminMessage[];
   adminRead: Record<string, string>; // 멘토 id → 운영자가 그 멘토와의 채팅을 마지막으로 읽은 시각
+  guardianAlerts: GuardianAlert[];
+  offers: MentorOffer[];
 }
 
-const empty: DB = { users: [], currentUserId: null, profiles: [], mentors: [], requests: [], messages: [], reviews: [], reports: [], lastRead: {}, inquiries: [], sanctions: [], adminMessages: [], adminRead: {} };
+const empty: DB = { users: [], currentUserId: null, profiles: [], mentors: [], requests: [], messages: [], reviews: [], reports: [], lastRead: {}, inquiries: [], sanctions: [], adminMessages: [], adminRead: {}, guardianAlerts: [], offers: [] };
 
 // 경력 조회 기능 이전에 저장된 멘토는 "서류 미제출" 상태로 본다
 function normalize(db: DB): DB {
@@ -247,6 +250,12 @@ export function unreadCount(db: Pick<DB, "messages" | "lastRead">, requestId: st
 export function createRequest(req: Omit<MentoringRequest, "id" | "status" | "createdAt">) {
   update((db) => {
     db.requests.push({ ...req, id: uid("r"), status: "pending", createdAt: new Date().toISOString() });
+    // 멘토의 제안으로 신청하면 제안은 수락한 것으로 본다
+    const offer = req.offerId ? db.offers.find((o) => o.id === req.offerId && o.status === "pending") : undefined;
+    if (offer) {
+      offer.status = "accepted";
+      offer.respondedAt = new Date().toISOString();
+    }
   });
 }
 
@@ -268,7 +277,96 @@ export function saveSummary(id: string, summary: LectureSummary) {
 
 export function addReport(r: Omit<SafetyReport, "id" | "status" | "createdAt">) {
   update((db) => {
-    db.reports.push({ ...r, id: uid("sf"), status: "new", createdAt: new Date().toISOString() });
+    const report: SafetyReport = { ...r, id: uid("sf"), status: "new", createdAt: new Date().toISOString() };
+    db.reports.push(report);
+    // 보호자 연락처가 있으면 바로 보호자에게 알린다
+    const target = guardianOf(db, report);
+    if (target?.phone) {
+      db.guardianAlerts.push({
+        id: uid("ga"),
+        reportId: report.id,
+        studentId: target.studentId,
+        phone: target.phone,
+        relation: target.relation,
+        message: guardianMessage(report),
+        sentBy: "auto",
+        createdAt: report.createdAt,
+      });
+    }
+  });
+}
+
+// ---------- 보호자 알림 ----------
+
+// 안전 알림이 난 멘토링의 학생과 보호자 연락처
+export function guardianOf(db: Pick<DB, "requests" | "profiles">, report: Pick<SafetyReport, "requestId">) {
+  const req = db.requests.find((x) => x.id === report.requestId);
+  if (!req) return undefined;
+  const profile = db.profiles.find((p) => p.userId === req.studentId);
+  return { studentId: req.studentId, phone: profile?.guardianPhone, relation: profile?.guardianRelation };
+}
+
+export function guardianMessage(report: Pick<SafetyReport, "studentName" | "mentorName" | "source" | "types" | "severity">) {
+  const where = report.source === "class" ? "화상 멘토링" : "멘토링 채팅";
+  const urgent = report.severity === "urgent" ? " 긴급하게 확인이 필요해요." : "";
+  return `[Menco] ${report.studentName} 학생의 ${where}에서 안전 점검 알림(${report.types.join(", ") || "부적절한 표현"})이 발생했어요.${urgent} 운영팀이 내용을 확인하고 있으며, 필요하면 따로 연락드릴게요. 문의: Menco 운영팀`;
+}
+
+export function sendGuardianAlert(reportId: string, phone: string, message: string, relation?: string) {
+  update((db) => {
+    const report = db.reports.find((x) => x.id === reportId);
+    if (!report) return;
+    const target = guardianOf(db, report);
+    db.guardianAlerts.push({
+      id: uid("ga"),
+      reportId,
+      studentId: target?.studentId ?? "",
+      phone,
+      relation: relation ?? target?.relation,
+      message,
+      sentBy: "admin",
+      createdAt: new Date().toISOString(),
+    });
+  });
+}
+
+export const maskPhone = (phone: string) => {
+  const d = phone.replace(/\D/g, "");
+  return d.length >= 10 ? `${d.slice(0, 3)}-****-${d.slice(-4)}` : phone;
+};
+
+export const PHONE_RE = /^01[016789]-?\d{3,4}-?\d{4}$/;
+
+// ---------- 멘토 → 멘티 제안 ----------
+
+// 멘토에게 보여 줄 수 있는 멘티 (제안 받기에 동의한 학생, 실명 제외)
+export function getOpenStudents(db: Pick<DB, "profiles">): StudentProfile[] {
+  return [...SEED_STUDENTS, ...db.profiles.filter((p) => p.openToMentors)];
+}
+
+// 이름 대신 쓰는 짧은 멘티 번호
+export function menteeCode(userId: string) {
+  let h = 2166136261;
+  for (const c of userId) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
+  h ^= h >>> 15;
+  h = Math.imul(h, 2246822507) >>> 0;
+  return `멘티 #${(h % 9000) + 1000}`;
+}
+
+export function sendOffer(mentorId: string, studentId: string, message: string) {
+  update((db) => {
+    if (db.offers.some((o) => o.mentorId === mentorId && o.studentId === studentId && o.status === "pending")) return;
+    db.offers.push({ id: uid("of"), mentorId, studentId, message, status: "pending", createdAt: new Date().toISOString() });
+  });
+}
+
+export function respondOffer(id: string, status: "accepted" | "declined") {
+  update((db) => {
+    const o = db.offers.find((x) => x.id === id);
+    if (o && o.status === "pending") {
+      o.status = status;
+      o.respondedAt = new Date().toISOString();
+    }
   });
 }
 

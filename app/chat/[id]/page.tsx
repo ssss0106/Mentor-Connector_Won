@@ -94,7 +94,7 @@ export default function ChatPage() {
       <div className="chat-notice">
         전화번호나 SNS 아이디 같은 개인 연락처는 공유하지 말고, 대화는 이 채팅방에서만 해 주세요.
         <br />
-        <span className="muted">🛡️ 안전을 위해 보낸 메시지는 AI(OpenAI)로 점검돼요. 비속어·괴롭힘·외부 연락 유도가 감지되면 해당 메시지의 일부가 운영자에게 전달될 수 있어요.</span>
+        <span className="muted">🛡️ 안전을 위해 보낸 메시지는 AI(OpenAI)로 점검돼요. 비속어·괴롭힘·외부 연락 유도가 감지되면 해당 메시지의 일부가 운영자에게 전달되고, 학생의 보호자에게도 바로 알림이 가요.</span>
       </div>
 
       {locked && (

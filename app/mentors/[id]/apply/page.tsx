@@ -10,7 +10,7 @@ import { createRequest, useStore } from "@/lib/store";
 export default function ApplyPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { ready, currentUser, myProfile, visibleMentors, requests } = useStore();
+  const { ready, currentUser, myProfile, visibleMentors, requests, offers } = useStore();
   // 경력 조회 확인이 끝난 멘토에게만 신청할 수 있다
   const mentor = visibleMentors.find((m) => m.id === id);
 
@@ -18,15 +18,27 @@ export default function ApplyPage() {
   const [time, setTime] = useState(""); // "19:00"
   const [method, setMethod] = useState(METHODS[0]);
   const [message, setMessage] = useState("");
+  // ?from=신청id → 같은 멘토와 이어서 멘토링, ?offer=제안id → 멘토의 제안을 받아 신청
+  const [query, setQuery] = useState<{ from?: string; offer?: string }>({});
+
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search);
+    setQuery({ from: sp.get("from") ?? undefined, offer: sp.get("offer") ?? undefined });
+  }, []);
+
+  const prev = requests.find((r) => r.id === query.from && r.studentId === currentUser?.id && r.mentorId === id && r.status === "completed");
+  const offer = offers.find((o) => o.id === query.offer && o.studentId === currentUser?.id && o.mentorId === id && o.status === "pending");
 
   useEffect(() => {
     if (ready && (!currentUser || currentUser.role !== "student")) router.replace("/signup");
   }, [ready, currentUser, router]);
 
-  // 고민 입력 내용을 신청서에 미리 채워준다
+  // 고민 입력 내용(이어서 하는 멘토링이면 지난 멘토링 이야기)을 신청서에 미리 채워준다
   useEffect(() => {
-    if (myProfile && !message) setMessage(myProfile.concern);
-  }, [myProfile]);
+    if (message) return;
+    if (prev) setMessage(`지난 ${formatSession(prev.date, prev.time)} 멘토링에 이어서 이야기하고 싶어요.\n`);
+    else if (myProfile) setMessage(myProfile.concern);
+  }, [myProfile, prev?.id]);
 
   // 앞으로 2주 동안 멘토 시간표에 맞는 실제 시간
   const days = useMemo(() => (mentor ? upcomingSlots(mentor.slots ?? []) : []), [mentor?.id, mentor?.slots?.length]);
@@ -66,6 +78,8 @@ export default function ApplyPage() {
       method,
       message: message.trim(),
       price: SESSION_PRICE,
+      ...(prev ? { followUpOf: prev.id } : {}),
+      ...(offer ? { offerId: offer.id } : {}),
     });
     alert(`${mentor.name} 멘토에게 ${formatSession(date, time)} 멘토링(30분, ${formatPrice(SESSION_PRICE)})을 신청했어요! 마이페이지에서 진행 상태를 확인할 수 있어요.`);
     router.push("/mypage");
@@ -73,10 +87,25 @@ export default function ApplyPage() {
 
   return (
     <div className="container narrow page">
-      <h1 className="page-title">멘토링 신청</h1>
+      <h1 className="page-title">{prev ? "이어서 멘토링 신청" : "멘토링 신청"}</h1>
       <p className="page-sub">
         {mentor.name} 멘토 · {mentor.university} {mentor.major}
       </p>
+
+      {prev && (
+        <div className="card apply-context">
+          <strong>🔁 {mentor.name} 멘토와 이어서 멘토링해요</strong>
+          <span className="muted">지난 멘토링 · {formatSession(prev.date, prev.time)} · {prev.method}</span>
+          {prev.summary && <span className="muted">지난 수업 요약이 멘토에게 함께 전달돼요.</span>}
+        </div>
+      )}
+      {offer && (
+        <div className="card apply-context">
+          <strong>💌 {mentor.name} 멘토가 보낸 제안</strong>
+          <p className="apply-offer-msg">“{offer.message}”</p>
+          <span className="muted">시간을 골라 신청하면 제안을 수락한 것으로 전달돼요.</span>
+        </div>
+      )}
 
       <form className="form" onSubmit={submit}>
         <div className="field">
