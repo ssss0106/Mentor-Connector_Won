@@ -114,7 +114,7 @@ export default function ChatPage() {
 
         {chat.length === 0 && (
           <div className="chat-empty muted">
-            {open ? "첫 메시지를 보내 인사해 보세요." : locked ? "지금은 대화할 수 없어요." : "멘토가 신청을 승인하면 채팅을 시작할 수 있어요."}
+            {open ? "첫 메시지를 보내 인사해 보세요." : locked ? "지금은 대화할 수 없어요." : req.status === "cancelled" ? "취소된 멘토링이에요." : "멘토가 신청을 승인하면 채팅을 시작할 수 있어요."}
           </div>
         )}
 
@@ -146,7 +146,7 @@ export default function ChatPage() {
               send();
             }
           }}
-          placeholder={open ? "메시지를 입력하세요 (Enter 전송, Shift+Enter 줄바꿈)" : locked ? "지금은 메시지를 보낼 수 없어요" : "멘토 승인 후 채팅할 수 있어요"}
+          placeholder={open ? "메시지를 입력하세요 (Enter 전송, Shift+Enter 줄바꿈)" : locked ? "지금은 메시지를 보낼 수 없어요" : req.status === "cancelled" ? "취소된 멘토링이라 메시지를 보낼 수 없어요" : "멘토 승인 후 채팅할 수 있어요"}
         />
         <button className="btn" disabled={!trimmed || blocked || !open}>
           보내기

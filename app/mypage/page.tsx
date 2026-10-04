@@ -9,12 +9,13 @@ import VerificationBadge from "@/components/VerificationBadge";
 import { STATUS_LABEL, categoryLabel, formatPrice } from "@/lib/data";
 import { formatSession } from "@/lib/schedule";
 import Avatar from "@/components/Avatar";
-import { activeSanction, canChat, maskPhone, mentorUnreadFromAdmin, resetAll, respondOffer, setRequestStatus, unreadCount, useStore } from "@/lib/store";
+import { activeSanction, agreeRecording, canChat, canStudentModify, cancelRequest, sessionStarted, maskPhone, mentorUnreadFromAdmin, resetAll, respondOffer, setRequestStatus, unreadCount, useStore } from "@/lib/store";
 import type { Mentor, MentoringRequest, RequestStatus, VerificationStatus } from "@/lib/types";
 
 const FLOW: RequestStatus[] = ["pending", "approved", "scheduled", "completed"];
 
 function StatusFlow({ status }: { status: RequestStatus }) {
+  if (status === "cancelled") return null;
   const idx = FLOW.indexOf(status);
   return (
     <div className="status-flow">
@@ -35,9 +36,37 @@ const NEXT_ACTION: Partial<Record<RequestStatus, { label: string; next: RequestS
   scheduled: { label: "멘토링 완료", next: "completed" },
 };
 
+// 화상 멘토링 입장: 내가 AI 녹음·요약에 동의해야 입장 버튼을 누를 수 있다
+function RoomEntry({ req, asMentor }: { req: MentoringRequest; asMentor: boolean }) {
+  const mine = asMentor ? req.recordingConsent?.mentor : req.recordingConsent?.student;
+  const theirs = asMentor ? req.recordingConsent?.student : req.recordingConsent?.mentor;
+  return (
+    <div className="room-entry">
+      <label className="check">
+        <input type="checkbox" checked={!!mine} disabled={!!mine} onChange={(e) => e.target.checked && agreeRecording(req.id, asMentor ? "mentor" : "student")} />
+        <span>
+          <strong>[필수] AI 녹음·요약 동의</strong> · 멘토링이 시작되면 자동으로 녹음되고, 끝나면 AI가 요약을 만들어요. 음성 파일과 받아쓴 원문은 저장하지 않아요.
+          비속어·괴롭힘·위험한 표현이 감지되면 그 발언의 일부가 운영자와 보호자에게 전달될 수 있어요.
+        </span>
+      </label>
+      <div className="room-entry-row">
+        <span className="muted small">{asMentor ? "학생" : "멘토"} 동의: {theirs ? "완료" : "아직 안 했어요"}</span>
+        {mine ? (
+          <Link href={`/room/${req.id}`} className="btn btn-sm btn-video">🎥 화상 멘토링 입장</Link>
+        ) : (
+          <button type="button" className="btn btn-sm btn-video" disabled title="AI 녹음·요약에 동의해야 입장할 수 있어요">
+            🎥 화상 멘토링 입장
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function RequestItem({ req, mentor, asMentor, unread, reviewed, locked }: { req: MentoringRequest; mentor?: Mentor; asMentor: boolean; unread: number; reviewed: boolean; locked?: boolean }) {
-  // 활동이 제한된 멘토는 신청을 처리할 수 없다
-  const action = locked ? undefined : NEXT_ACTION[req.status];
+  // 활동이 제한된 멘토는 신청을 처리할 수 없고, 확정 전에 일정이 지난 신청은 진행할 수 없다
+  const expired = (req.status === "pending" || req.status === "approved") && sessionStarted(req);
+  const action = locked || expired ? undefined : NEXT_ACTION[req.status];
   return (
     <div className="card req">
       <div className="req-top">
@@ -51,14 +80,36 @@ function RequestItem({ req, mentor, asMentor, unread, reviewed, locked }: { req:
         </div>
         <StatusBadge status={req.status} />
       </div>
-      {(req.followUpOf || req.offerId) && (
+      {(req.followUpOf || req.offerId || req.changedAt) && (
         <div className="req-labels">
+          {req.changedAt && req.status === "pending" && <span className="tag">✏️ {asMentor ? "학생이 일정·내용을 바꿨어요" : "변경한 신청"}</span>}
           {req.followUpOf && <span className="tag">🔁 이어서 하는 멘토링</span>}
           {req.offerId && <span className="tag">💌 {asMentor ? "내 제안을 수락한 신청" : "멘토 제안으로 신청"}</span>}
         </div>
       )}
       <p className="req-msg">{req.message}</p>
       <StatusFlow status={req.status} />
+      {expired && <div className="muted small">확정되기 전에 일정이 지났어요. {asMentor ? "학생이 새로 신청하면 진행할 수 있어요." : "새 일정으로 다시 신청해 주세요."}</div>}
+      {req.status === "cancelled" && (
+        <div className="muted small">{asMentor ? "학생이" : "내가"} {req.cancelledAt ? new Date(req.cancelledAt).toLocaleString("ko-KR", { dateStyle: "short", timeStyle: "short" }) : ""}에 취소한 신청이에요.</div>
+      )}
+      {!asMentor && canStudentModify(req) && (
+        <div className="req-actions">
+          <button
+            className="btn btn-sm btn-ghost"
+            onClick={() => {
+              if (confirm(`${formatSession(req.date, req.time)} 멘토링 신청을 취소할까요?`)) cancelRequest(req.id);
+            }}
+          >
+            신청 취소
+          </button>
+          {mentor && (
+            <Link href={`/mentors/${mentor.id}/apply?change=${req.id}`} className="btn btn-sm btn-outline">
+              ✏️ 일정·내용 변경
+            </Link>
+          )}
+        </div>
+      )}
       {req.summary && (
         <details className="summary-details">
           <summary>📝 AI 수업 요약 보기</summary>
@@ -88,11 +139,6 @@ function RequestItem({ req, mentor, asMentor, unread, reviewed, locked }: { req:
               💬 채팅{unread > 0 && <span className="unread">{unread}</span>}
             </Link>
           )}
-          {req.status === "scheduled" && (
-            <Link href={`/room/${req.id}`} className="btn btn-sm btn-video">
-              🎥 화상 멘토링 입장
-            </Link>
-          )}
           {asMentor && action && (
             <button className={`btn btn-sm ${req.status === "scheduled" ? "btn-ghost" : ""}`} onClick={() => setRequestStatus(req.id, action.next)}>
               {action.label}
@@ -100,6 +146,7 @@ function RequestItem({ req, mentor, asMentor, unread, reviewed, locked }: { req:
           )}
         </div>
       )}
+      {req.status === "scheduled" && <RoomEntry req={req} asMentor={asMentor} />}
     </div>
   );
 }
@@ -161,7 +208,11 @@ export default function MyPage() {
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
 
   const shown = mine.filter((r) =>
-    tab === "all" ? r.status !== "completed" : tab === "upcoming" ? r.status === "scheduled" : r.status === "completed",
+    tab === "all"
+      ? r.status !== "completed" && r.status !== "cancelled"
+      : tab === "upcoming"
+        ? r.status === "scheduled"
+        : r.status === "completed" || r.status === "cancelled",
   );
 
   const tabs: { key: Tab; label: string }[] = [

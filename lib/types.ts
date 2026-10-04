@@ -2,7 +2,7 @@ export type Role = "student" | "mentor";
 
 export type ConcernCategory = "학습" | "진로" | "대학생활";
 
-export type RequestStatus = "pending" | "approved" | "scheduled" | "completed";
+export type RequestStatus = "pending" | "approved" | "scheduled" | "completed" | "cancelled";
 
 export interface User {
   id: string;
@@ -113,6 +113,9 @@ export interface MentoringRequest {
   summary?: LectureSummary;
   followUpOf?: string; // 같은 멘토와 이어서 하는 멘토링이면 지난 신청 id
   offerId?: string; // 멘토의 제안을 받아 신청했으면 제안 id
+  cancelledAt?: string; // 학생이 신청을 취소한 시각
+  changedAt?: string; // 학생이 일정·내용을 마지막으로 바꾼 시각
+  recordingConsent?: { student?: string; mentor?: string }; // AI 녹음·요약 동의 시각
 }
 
 // 완료된 멘토링 1건마다 학생이 후기를 1개 남길 수 있다

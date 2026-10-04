@@ -220,7 +220,7 @@ export function reviewEnrollment(mentorId: string, approve: boolean, rejectReaso
 // ---------- 채팅 ----------
 
 // 멘토가 승인한 뒤부터 채팅할 수 있다
-export const canChat = (req: MentoringRequest) => req.status !== "pending";
+export const canChat = (req: MentoringRequest) => req.status !== "pending" && req.status !== "cancelled";
 
 export function sendMessage(requestId: string, sender: User, text: string) {
   const now = new Date().toISOString();
@@ -256,6 +256,45 @@ export function createRequest(req: Omit<MentoringRequest, "id" | "status" | "cre
       offer.status = "accepted";
       offer.respondedAt = new Date().toISOString();
     }
+  });
+}
+
+// 멘토링 시작 시각이 지났는지 (지난 멘토링은 취소·변경할 수 없다)
+export function sessionStarted(req: Pick<MentoringRequest, "date" | "time">, now = new Date()) {
+  const start = new Date(`${req.date}T${req.time}:00`);
+  return !isNaN(start.getTime()) && start.getTime() <= now.getTime();
+}
+
+// 학생은 멘토링이 시작되기 전까지 신청을 취소하거나 바꿀 수 있다
+export const canStudentModify = (req: MentoringRequest) =>
+  (req.status === "pending" || req.status === "approved" || req.status === "scheduled") && !sessionStarted(req);
+
+export function cancelRequest(id: string) {
+  update((db) => {
+    const r = db.requests.find((x) => x.id === id);
+    if (!r || !canStudentModify(r)) return;
+    r.status = "cancelled";
+    r.cancelledAt = new Date().toISOString();
+  });
+}
+
+// 일정이나 내용을 바꾸면 멘토가 다시 확인해야 하므로 "신청 대기"로 돌아간다
+export function changeRequest(id: string, change: Pick<MentoringRequest, "date" | "time" | "method" | "message">) {
+  update((db) => {
+    const r = db.requests.find((x) => x.id === id);
+    if (!r || !canStudentModify(r)) return;
+    Object.assign(r, change);
+    r.status = "pending";
+    r.changedAt = new Date().toISOString();
+    r.recordingConsent = undefined;
+  });
+}
+
+// 화상 멘토링 입장 전 AI 녹음·요약 동의
+export function agreeRecording(id: string, role: "student" | "mentor") {
+  update((db) => {
+    const r = db.requests.find((x) => x.id === id);
+    if (r) r.recordingConsent = { ...r.recordingConsent, [role]: new Date().toISOString() };
   });
 }
 

@@ -7,9 +7,9 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import Avatar from "@/components/Avatar";
-import LectureRecorder from "@/components/LectureRecorder";
+import LectureRecorder, { type LectureRecorderHandle } from "@/components/LectureRecorder";
 import { SESSION_MINUTES, formatSession } from "@/lib/schedule";
-import { setRequestStatus, useStore } from "@/lib/store";
+import { agreeRecording, setRequestStatus, useStore } from "@/lib/store";
 
 function formatTime(sec: number) {
   const m = Math.floor(sec / 60).toString().padStart(2, "0");
@@ -30,14 +30,20 @@ export default function RoomPage() {
   const [camOn, setCamOn] = useState(false);
   const [camError, setCamError] = useState("");
   const [memo, setMemo] = useState("");
+  const [leaving, setLeaving] = useState(false);
+  const recorderRef = useRef<LectureRecorderHandle>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  // 상대방이 3초 뒤 입장하는 것처럼 보여준다
+  const isMentor = currentUser?.role === "mentor";
+  const consented = !!req && !!(isMentor ? req.recordingConsent?.mentor : req.recordingConsent?.student);
+
+  // 녹음에 동의하고 입장하면, 상대방이 3초 뒤 입장하는 것처럼 보여준다
   useEffect(() => {
+    if (!consented) return;
     const t = setTimeout(() => setJoined(true), 3000);
     return () => clearTimeout(t);
-  }, []);
+  }, [consented]);
 
   useEffect(() => {
     if (!joined) return;
@@ -75,11 +81,10 @@ export default function RoomPage() {
 
   if (!ready) return null;
 
-  const isMentor = currentUser?.role === "mentor";
   const allowed =
     req && currentUser && (isMentor ? req.mentorId === currentUser.mentorId : req.studentId === currentUser.id);
 
-  if (!req || !mentor || !allowed) {
+  if (!req || !mentor || !allowed || (req.status !== "scheduled" && req.status !== "completed")) {
     return (
       <div className="container page empty">
         입장할 수 없는 멘토링이에요. <Link href="/mypage">마이페이지로</Link>
@@ -90,8 +95,34 @@ export default function RoomPage() {
   const me = isMentor ? { name: `${mentor.name} 멘토`, seed: mentor.id + mentor.name } : { name: req.studentName, seed: req.studentName };
   const other = isMentor ? { name: `${req.studentName} 학생`, seed: req.studentName } : { name: `${mentor.name} 멘토`, seed: mentor.id + mentor.name };
 
-  const leave = () => {
+  // 주소로 바로 들어와도 녹음 동의 없이는 입장할 수 없다
+  if (!consented) {
+    return (
+      <div className="container narrow page">
+        <div className="card room-consent">
+          <h1 className="page-title">화상 멘토링 입장</h1>
+          <p className="muted">{mentor.name} 멘토 × {req.studentName} 학생 · {formatSession(req.date, req.time)}</p>
+          <p>
+            멘토링이 시작되면 자동으로 녹음되고, 끝나면 AI가 요약을 만들어요. 음성 파일과 받아쓴 원문은 저장하지 않아요.
+            비속어·괴롭힘·위험한 표현이 감지되면 그 발언의 일부가 운영자와 보호자에게 전달될 수 있어요.
+          </p>
+          <div className="req-actions">
+            <Link href="/mypage" className="btn btn-sm btn-ghost">마이페이지로</Link>
+            <button className="btn btn-sm btn-video" onClick={() => agreeRecording(req.id, isMentor ? "mentor" : "student")}>
+              동의하고 입장하기
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const leave = async () => {
+    if (leaving) return;
+    setLeaving(true);
     stopCamera();
+    // 녹음 중이면 멈추고 요약을 저장한 뒤 나간다
+    await recorderRef.current?.finish();
     if (isMentor && req.status !== "completed" && confirm("멘토링을 완료 처리할까요?")) {
       setRequestStatus(req.id, "completed");
     }
@@ -143,8 +174,8 @@ export default function RoomPage() {
             <button className={`ctrl ${camOn ? "" : "off"}`} onClick={toggleCamera}>
               {camOn ? "📷 카메라 끄기" : "📷 카메라 켜기"}
             </button>
-            <button className="ctrl leave" onClick={leave}>
-              나가기
+            <button className="ctrl leave" onClick={leave} disabled={leaving}>
+              {leaving ? "요약 저장 중…" : "나가기"}
             </button>
           </div>
           {camError && <div className="cam-error">{camError}</div>}
@@ -165,6 +196,8 @@ export default function RoomPage() {
             />
           </div>
           <LectureRecorder
+            ref={recorderRef}
+            autoStart={joined}
             requestId={req.id}
             summary={req.summary}
             mentorId={mentor.id}
