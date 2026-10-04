@@ -260,10 +260,10 @@ export const canChat = (req: MentoringRequest) => req.status !== "pending" && re
 
 // 읽은 시각: 기기마다 시계가 조금씩 달라도(상대 기기 시계가 빠르면) 마지막 메시지까지 읽은 것으로 남도록,
 // 지금 시각과 마지막 메시지 시각 중 늦은 쪽을 쓴다
-const readStamp = (lastAt: string) => {
-  const now = new Date().toISOString();
-  return now > lastAt ? now : lastAt;
-};
+// (기기마다 시계가 다르면 메시지가 시간 순서대로 쌓이지 않으므로, 목록의 마지막이 아니라 가장 늦은 시각을 쓴다)
+const latest = (...times: (string | undefined)[]) => times.reduce<string>((max, t) => (t && t > max ? t : max), "");
+const readStamp = (lastAt: string) => latest(new Date().toISOString(), lastAt);
+const latestMessageAt = (msgs: { createdAt: string }[]) => latest(...msgs.map((m) => m.createdAt));
 
 // 같은 학생과 멘토 사이의 대화는 멘토링을 여러 번 해도 하나의 채팅방에 모인다.
 // 메시지는 보낼 때 진행 중인 신청 id를 함께 저장하고(안전 알림용), 화면에서는 두 사람의 모든 신청을 묶어서 보여 준다.
@@ -299,18 +299,21 @@ export function sendMessage(pair: Pair, sender: User, text: string): MentoringRe
     if (isQuietHours() || chatAlertLocked(db, pair)) return;
     target = roomActiveRequest(db, pair);
     if (!target) return;
+    // 보내는 사람은 방의 메시지를 모두 본 것으로 둔다. 읽은 시각은 절대 뒤로 돌아가지 않게 한다
+    // (상대 기기 시계가 빨라 미래 시각으로 찍힌 메시지가 있으면, 내 시계 기준 "지금"으로 덮어쓰는 순간 그 메시지가 다시 안 읽음이 됐다)
+    const before = latestMessageAt(roomMessages(db, pair));
     db.messages.push({ id: uid("c"), requestId: target.id, senderId: sender.id, senderName: sender.name, text, createdAt: now });
-    db.lastRead[`${sender.id}:room:${roomKey(pair)}`] = now;
+    db.lastRead[`${sender.id}:room:${roomKey(pair)}`] = latest(readSince(db, sender.id, pair), now, before);
   });
   return target;
 }
 
 export function markChatRead(pair: Pair, userId: string) {
   const db = load();
-  const last = roomMessages(db, pair).at(-1);
-  if (!last || readSince(db, userId, pair) >= last.createdAt) return;
+  const lastAt = latestMessageAt(roomMessages(db, pair));
+  if (!lastAt || readSince(db, userId, pair) >= lastAt) return;
   update((d) => {
-    d.lastRead[`${userId}:room:${roomKey(pair)}`] = readStamp(last.createdAt);
+    d.lastRead[`${userId}:room:${roomKey(pair)}`] = latest(readSince(d, userId, pair), readStamp(lastAt));
   });
 }
 
@@ -634,24 +637,26 @@ export function liftSanction(mentorId: string) {
 export function sendAdminMessage(mentorId: string, from: "admin" | "mentor", text: string, mentorUserId?: string) {
   const now = new Date().toISOString();
   update((db) => {
+    const before = latestMessageAt(db.adminMessages.filter((m) => m.mentorId === mentorId));
     db.adminMessages.push({ id: uid("am"), mentorId, from, text, createdAt: now });
-    if (from === "admin") db.adminRead[mentorId] = now;
-    else if (mentorUserId) db.lastRead[`${mentorUserId}:admin`] = now;
+    // 읽은 시각은 뒤로 돌아가지 않게 한다 (채팅방과 같은 이유)
+    if (from === "admin") db.adminRead[mentorId] = latest(db.adminRead[mentorId], now, before);
+    else if (mentorUserId) db.lastRead[`${mentorUserId}:admin`] = latest(db.lastRead[`${mentorUserId}:admin`], now, before);
   });
 }
 
 // reader: "admin" 이면 운영자, 아니면 멘토의 User id
 export function markAdminChatRead(mentorId: string, reader: "admin" | string) {
   const db = load();
-  const last = db.adminMessages.filter((m) => m.mentorId === mentorId).at(-1);
-  if (!last) return;
+  const lastAt = latestMessageAt(db.adminMessages.filter((m) => m.mentorId === mentorId));
+  if (!lastAt) return;
   const key = reader === "admin" ? null : `${reader}:admin`;
   const seen = key ? db.lastRead[key] : db.adminRead[mentorId];
-  if ((seen ?? "") >= last.createdAt) return;
+  if ((seen ?? "") >= lastAt) return;
   update((d) => {
-    const now = readStamp(last.createdAt);
-    if (key) d.lastRead[key] = now;
-    else d.adminRead[mentorId] = now;
+    const stamp = readStamp(lastAt);
+    if (key) d.lastRead[key] = latest(d.lastRead[key], stamp);
+    else d.adminRead[mentorId] = latest(d.adminRead[mentorId], stamp);
   });
 }
 
