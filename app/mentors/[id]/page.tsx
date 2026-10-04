@@ -7,7 +7,7 @@ import SlotGrid from "@/components/SlotGrid";
 import VerificationBadge from "@/components/VerificationBadge";
 import { SESSION_MINUTES, summarizeSlots } from "@/lib/schedule";
 import { MIN_REVIEWS_FOR_AVERAGE, SESSION_PRICE, formatPrice } from "@/lib/data";
-import { activeSanction, isVerifiedMentor, useStore } from "@/lib/store";
+import { activeSanction, isExcellentMentor, isVerifiedMentor, useStore } from "@/lib/store";
 
 export default function MentorDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -46,6 +46,7 @@ export default function MentorDetailPage() {
               <div className="badge-row" style={{ marginTop: 8 }}>
                 <VerificationBadge status={mentor.enrollment.status} kind="enrollment" />
                 <VerificationBadge status={mentor.verification.status} />
+                {isExcellentMentor(store, mentor.id) && <span className="excellent-badge inline">🏅 우수 멘토</span>}
               </div>
             </div>
           </div>
@@ -141,7 +142,7 @@ export default function MentorDetailPage() {
               <div className="review-head">
                 <span className="stars-sm">{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</span>
                 <span>{r.studentLabel}</span>
-                <span className="muted">{r.createdAt.slice(0, 10)}</span>
+                <span className="muted">{new Date(r.createdAt).toLocaleDateString("ko-KR")}</span>
               </div>
               {r.helpful.length > 0 && (
                 <div className="tags">

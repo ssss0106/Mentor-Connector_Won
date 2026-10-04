@@ -4,9 +4,12 @@ import Link from "next/link";
 import Avatar from "@/components/Avatar";
 import LandingAnswers from "@/components/LandingAnswers";
 import LandingFaq from "@/components/LandingFaq";
+import LandingProcess from "@/components/LandingProcess";
 import { SEED_MENTORS, SESSION_PRICE, formatPrice } from "@/lib/data";
+import { scoreMentor } from "@/lib/match";
 import { SESSION_MINUTES } from "@/lib/schedule";
 import { useStore } from "@/lib/store";
+import type { StudentProfile } from "@/lib/types";
 
 // 시연용 예시 후기 (실제 이용자 후기가 아님)
 const REVIEWS = [
@@ -27,9 +30,24 @@ const REVIEWS = [
   },
 ];
 
-// 첫 화면 미리보기에 보여줄 추천 결과 예시
-// 전공 선택 고민에 맞는 멘토: 박서준(같은 강원 출신·심리학과), 김지은(아동청소년학과), 정유나(전공을 바꾼 경험)
-const HERO_MENTORS = ["m2", "m1", "m5"].map((id) => SEED_MENTORS.find((m) => m.id === id)!).filter(Boolean);
+// 첫 화면 미리보기에 보여줄 추천 결과 예시: 심리학과가 궁금한 강원 고1 학생
+// 실제 추천과 같은 방식(scoreMentor)으로 점수를 매겨 높은 순서로 보여 준다
+const HERO_STUDENT: StudentProfile = {
+  userId: "hero",
+  grade: "고1",
+  region: "강원",
+  interests: ["사회·심리", "교육"],
+  desiredMajor: "심리학과",
+  category: "진로",
+  topics: ["전공 선택"],
+  concern: "심리학과에 가고 싶은데, 실제로 뭘 배우는지 궁금해요",
+  availableTimes: [],
+};
+const HERO_RESULTS = ["m2", "m1", "m3"]
+  .map((id) => SEED_MENTORS.find((m) => m.id === id)!)
+  .filter(Boolean)
+  .map((m) => scoreMentor(HERO_STUDENT, m))
+  .sort((a, b) => b.score - a.score);
 
 const STEPS = [
   { icon: "/images/step1.svg", title: "고민 입력", desc: "가고 싶은 대학·전공과 고민을 적어요" },
@@ -56,16 +74,13 @@ export default function Home() {
       <section className="hero">
         <div className="container hero-grid">
           <div>
-            <span className="hero-eyebrow">지역 청소년 × 대학생 멘토 1:1</span>
+            <span className="hero-eyebrow">비수도권 청소년 × 대학생 멘토 1:1</span>
             <h1>
-              어디에 살아도, <em>같은 진학 정보</em>를
+              내 고민을 <em>먼저 경험한</em>
               <br />
-              대학생 선배와 1:1로
+              대학생 선배를 만나보세요
             </h1>
-            <p>
-              대학과 전공을 고르기 전에, 그 길을 먼저 걸은 선배에게 온라인으로 직접 들어보세요.
-              지역과 상관없이 누구나 같은 조건({SESSION_MINUTES}분 {formatPrice(SESSION_PRICE)})으로 만날 수 있어요.
-            </p>
+            <p>진로·학습·대학생활 고민, 먼저 겪어 본 멘토에게 온라인으로 물어보세요.</p>
             <div className="hero-actions">
               <Link href={findHref} className="btn">
                 나에게 맞는 멘토 찾기 →
@@ -75,22 +90,38 @@ export default function Home() {
               </Link>
             </div>
           </div>
-          <div className="hero-preview" aria-hidden="true">
+          <div className="hero-preview">
             <div className="preview-concern">
               <Avatar seed="hero-student" size={44} />
               <div>
-                <div className="preview-label">고1 · 강원 · 진로 고민</div>
-                <div className="preview-text">심리학과에 가고 싶은데, 실제로 뭘 배우는지 궁금해요</div>
+                <div className="preview-label">{HERO_STUDENT.grade} · {HERO_STUDENT.region} · 진로 고민</div>
+                <div className="preview-text">{HERO_STUDENT.concern}</div>
               </div>
             </div>
             <div className="preview-arrow">추천 멘토 3명을 찾았어요 ↓</div>
-            {HERO_MENTORS.map((m) => (
+            {HERO_RESULTS.map(({ mentor: m, score, breakdown }) => (
               <div key={m.id} className="preview-mentor">
                 <Avatar seed={m.id + m.name} size={48} />
                 <div className="preview-mentor-info">
                   <strong>{m.name} 멘토</strong>
                   <span className="muted">{m.university} · {m.major}</span>
                 </div>
+                <span className="score-wrap" tabIndex={0}>
+                  <span className="score">{score}점</span>
+                  <span role="tooltip" className="score-tip">
+                    <strong className="score-tip-title">이렇게 점수를 매겼어요</strong>
+                    {breakdown.map((b) => (
+                      <span key={b.label} className="score-tip-row">
+                        <span>{b.label}</span>
+                        <span className="score-tip-pt">+{b.points}</span>
+                      </span>
+                    ))}
+                    <span className="score-tip-row score-tip-total">
+                      <span>합계</span>
+                      <span className="score-tip-pt">{score}점</span>
+                    </span>
+                  </span>
+                </span>
               </div>
             ))}
           </div>
@@ -201,6 +232,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* 신청부터 완료까지 진행 과정 */}
+      <LandingProcess />
 
       {/* 마무리 */}
       <section className="lp-cta">

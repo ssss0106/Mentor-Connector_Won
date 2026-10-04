@@ -6,6 +6,7 @@
 import { useEffect, useState } from "react";
 import { SEED_MENTORS, SEED_REVIEWS } from "./data";
 import * as shared from "./shared";
+import { dateKey } from "./schedule";
 import type { Doc } from "./shared-ops";
 import { SEED_STUDENTS } from "./seed-students";
 import type { AdminMessage, ChatMessage, GuardianAlert, Inquiry, MentorOffer, MentorSanction, Mentor, MentoringRequest, RequestStatus, StudentProfile, User, Verification, LectureSummary, Review, SafetyReport } from "./types";
@@ -29,9 +30,13 @@ interface DB {
   adminRead: Record<string, string>; // 멘토 id → 운영자가 그 멘토와의 채팅을 마지막으로 읽은 시각
   guardianAlerts: GuardianAlert[];
   offers: MentorOffer[];
+  // 시연방에서 두 사람이 동시에 바꿔도 서로 덮어쓰지 않도록, 항목마다 따로 저장한다
+  recordingConsents: Record<string, string>; // "신청id:student|mentor" → 녹음 동의 시각
+  reactions: Record<string, string>; // "메시지id:사용자id" → 감정 이모지
+  excellent: Record<string, boolean>; // 멘토 id → 우수 멘토 선정 여부 (기본 선정 멘토를 해제할 때 false)
 }
 
-const empty: DB = { users: [], currentUserId: null, profiles: [], mentors: [], requests: [], messages: [], reviews: [], reports: [], lastRead: {}, inquiries: [], sanctions: [], adminMessages: [], adminRead: {}, guardianAlerts: [], offers: [] };
+const empty: DB = { users: [], currentUserId: null, profiles: [], mentors: [], requests: [], messages: [], reviews: [], reports: [], lastRead: {}, inquiries: [], sanctions: [], adminMessages: [], adminRead: {}, guardianAlerts: [], offers: [], recordingConsents: {}, reactions: {}, excellent: {} };
 
 // 경력 조회 기능 이전에 저장된 멘토는 "서류 미제출" 상태로 본다
 function normalize(db: DB): DB {
@@ -99,6 +104,34 @@ export function activeSanction(db: Pick<DB, "sanctions">, mentorId: string): Men
     .find((s) => s.mentorId === mentorId && !s.liftedAt && (s.type === "banned" || (s.until ?? "") > now));
 }
 
+// ---------- 우수 멘토 ----------
+
+// 기본으로 선정해 둔 우수 멘토 (운영자가 멘토 관리에서 선정하거나 해제할 수 있다)
+export const SEED_EXCELLENT = ["m2", "m1", "m3", "m26", "m12"];
+
+// 활동이 제한된 멘토는 우수 멘토로 보여 주지 않는다
+export function isExcellentMentor(db: Pick<DB, "excellent" | "sanctions">, mentorId: string): boolean {
+  if (activeSanction(db, mentorId)) return false;
+  return db.excellent[mentorId] ?? SEED_EXCELLENT.includes(mentorId);
+}
+
+export function setExcellent(mentorId: string, value: boolean) {
+  update((db) => {
+    db.excellent[mentorId] = value;
+  });
+}
+
+// 운영자가 우수 멘토를 고를 때 참고하는 기록
+export function mentorRecord(db: Pick<DB, "requests" | "reviews" | "reports">, mentorId: string) {
+  const reviews = [...SEED_REVIEWS, ...db.reviews].filter((r) => r.mentorId === mentorId);
+  return {
+    completed: db.requests.filter((r) => r.mentorId === mentorId && r.status === "completed").length,
+    reviewCount: reviews.length,
+    average: reviews.length ? reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length : 0,
+    alerts: db.reports.filter((r) => r.mentorId === mentorId && r.status !== "dismissed").length,
+  };
+}
+
 // 활동 정지·영구 정지된 멘토는 목록·추천·신청에서 빠진다
 export function getVisibleMentors(db: DB = load()): Mentor[] {
   return getAllMentors(db).filter((m) => isVerifiedMentor(m) && !activeSanction(db, m.id));
@@ -157,7 +190,9 @@ export function saveMentorProfile(userId: string, mentor: Omit<Mentor, "id" | "v
     // 프로필을 수정해도 경력 조회 상태는 그대로 유지한다
     const prev = db.mentors.find((m) => m.id === id);
     const verification = prev?.verification ?? { status: "not_submitted" };
-    const enrollment = prev?.enrollment ?? { status: "not_submitted" };
+    // 학교나 전공을 바꾸면 재학 인증을 다시 받아야 한다 (서류로 확인한 학교와 달라지므로)
+    const schoolChanged = !!prev && (prev.university !== mentor.university || prev.major !== mentor.major);
+    const enrollment: Mentor["enrollment"] = prev && !schoolChanged ? prev.enrollment : { status: "not_submitted" };
     db.mentors = db.mentors.filter((m) => m.id !== id);
     db.mentors.push({ ...mentor, id, verification, enrollment });
     const user = db.users.find((u) => u.id === userId);
@@ -222,6 +257,13 @@ export function reviewEnrollment(mentorId: string, approve: boolean, rejectReaso
 // 멘토가 승인한 뒤부터 채팅할 수 있다
 export const canChat = (req: MentoringRequest) => req.status !== "pending" && req.status !== "cancelled";
 
+// 읽은 시각: 기기마다 시계가 조금씩 달라도(상대 기기 시계가 빠르면) 마지막 메시지까지 읽은 것으로 남도록,
+// 지금 시각과 마지막 메시지 시각 중 늦은 쪽을 쓴다
+const readStamp = (lastAt: string) => {
+  const now = new Date().toISOString();
+  return now > lastAt ? now : lastAt;
+};
+
 // 같은 학생과 멘토 사이의 대화는 멘토링을 여러 번 해도 하나의 채팅방에 모인다.
 // 메시지는 보낼 때 진행 중인 신청 id를 함께 저장하고(안전 알림용), 화면에서는 두 사람의 모든 신청을 묶어서 보여 준다.
 type Pair = Pick<MentoringRequest, "studentId" | "mentorId">;
@@ -266,7 +308,7 @@ export function markChatRead(pair: Pair, userId: string) {
   const last = roomMessages(db, pair).at(-1);
   if (!last || readSince(db, userId, pair) >= last.createdAt) return;
   update((d) => {
-    d.lastRead[`${userId}:room:${roomKey(pair)}`] = new Date().toISOString();
+    d.lastRead[`${userId}:room:${roomKey(pair)}`] = readStamp(last.createdAt);
   });
 }
 
@@ -287,14 +329,23 @@ export function otherReadAt(db: Pick<DB, "messages" | "lastRead" | "requests" | 
 // 메시지에 감정 남기기: 같은 감정을 다시 누르면 취소하고, 다른 감정을 누르면 바꾼다
 export const REACTIONS = ["😍", "😆", "👍", "😮", "😢", "😡", "👌"];
 
+// 메시지에 남긴 감정 (사용자 id → 이모지). 예전에 메시지 안에 저장한 감정도 함께 본다.
+export function reactionsOf(db: Pick<DB, "reactions">, m: ChatMessage): Record<string, string> {
+  const out: Record<string, string> = { ...m.reactions };
+  const prefix = `${m.id}:`;
+  for (const [k, v] of Object.entries(db.reactions)) if (k.startsWith(prefix)) out[k.slice(prefix.length)] = v;
+  for (const k of Object.keys(out)) if (!out[k]) delete out[k];
+  return out;
+}
+
 export function reactMessage(messageId: string, userId: string, emoji: string) {
   update((db) => {
     const m = db.messages.find((x) => x.id === messageId);
     if (!m) return;
-    const next = { ...m.reactions };
-    if (next[userId] === emoji) delete next[userId];
-    else next[userId] = emoji;
-    m.reactions = next;
+    const key = `${messageId}:${userId}`;
+    const current = reactionsOf(db, m)[userId];
+    // 지운 감정은 빈 값으로 남겨 예전 방식으로 저장된 감정까지 가린다
+    db.reactions[key] = current === emoji ? "" : emoji;
   });
 }
 
@@ -340,15 +391,28 @@ export function changeRequest(id: string, change: Pick<MentoringRequest, "date" 
     r.status = "pending";
     r.changedAt = new Date().toISOString();
     r.recordingConsent = undefined;
+    // 일정이 바뀌면 녹음 동의도 새로 받는다
+    db.recordingConsents[`${id}:student`] = "";
+    db.recordingConsents[`${id}:mentor`] = "";
   });
 }
 
 // 화상 멘토링 입장 전 AI 녹음·요약 동의
 export function agreeRecording(id: string, role: "student" | "mentor") {
   update((db) => {
-    const r = db.requests.find((x) => x.id === id);
-    if (r) r.recordingConsent = { ...r.recordingConsent, [role]: new Date().toISOString() };
+    db.recordingConsents[`${id}:${role}`] = new Date().toISOString();
   });
+}
+
+export function consentOf(db: Pick<DB, "recordingConsents">, req: MentoringRequest, role: "student" | "mentor"): string | undefined {
+  const key = `${req.id}:${role}`;
+  if (key in db.recordingConsents) return db.recordingConsents[key] || undefined;
+  return req.recordingConsent?.[role];
+}
+
+// 멘토링 당일이 되었는지 (화상 입장과 완료 처리는 멘토링 날짜부터 할 수 있다)
+export function sessionDayReached(req: Pick<MentoringRequest, "date">, now = new Date()) {
+  return dateKey(now) >= req.date;
 }
 
 export function setRequestStatus(id: string, status: RequestStatus) {
@@ -358,10 +422,14 @@ export function setRequestStatus(id: string, status: RequestStatus) {
   });
 }
 
-export function saveSummary(id: string, summary: LectureSummary) {
+// 멘토와 학생이 각자 기기에서 녹음하면 요약이 두 번 만들어진다.
+// 멘토 기기의 요약을 기본으로 쓰고, 학생 기기의 요약은 아직 요약이 없을 때만 저장한다.
+export function saveSummary(id: string, summary: LectureSummary, by: "student" | "mentor" = "mentor") {
   update((db) => {
     const r = db.requests.find((x) => x.id === id);
-    if (r) r.summary = summary;
+    if (!r) return;
+    if (by === "student" && r.summary) return;
+    r.summary = summary;
   });
 }
 
@@ -522,7 +590,7 @@ export function markAdminChatRead(mentorId: string, reader: "admin" | string) {
   const seen = key ? db.lastRead[key] : db.adminRead[mentorId];
   if ((seen ?? "") >= last.createdAt) return;
   update((d) => {
-    const now = new Date().toISOString();
+    const now = readStamp(last.createdAt);
     if (key) d.lastRead[key] = now;
     else d.adminRead[mentorId] = now;
   });

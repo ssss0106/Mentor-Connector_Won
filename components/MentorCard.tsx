@@ -19,6 +19,7 @@ interface Props {
   breakdown?: ScoreItem[]; // 점수 항목별 이유 (점수에 마우스를 올리면 보여 준다)
   sameRegion?: boolean;
   story?: Story;
+  excellent?: boolean; // 운영자가 선정한 우수 멘토
 }
 
 // 문장 끝에서 자르고, 그래도 길면 말줄임표를 붙인다
@@ -30,9 +31,10 @@ function snippet(text: string, max: number) {
   return end > max * 0.5 ? cut.slice(0, end + 1) : `${cut.trimEnd()}…`;
 }
 
-export default function MentorCard({ mentor, score, reasons, breakdown, sameRegion, story }: Props) {
+export default function MentorCard({ mentor, score, reasons, breakdown, sameRegion, story, excellent }: Props) {
   return (
-    <Link href={`/mentors/${mentor.id}`} className="card mentor-card">
+    <Link href={`/mentors/${mentor.id}`} className={`card mentor-card ${excellent ? "is-excellent" : ""}`}>
+      {excellent && <span className="excellent-badge">🏅 우수 멘토</span>}
       <div className="mentor-head">
         <Avatar seed={mentor.id + mentor.name} />
         <div>

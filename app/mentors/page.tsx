@@ -4,36 +4,48 @@ import { useState } from "react";
 import ChipSelect from "@/components/ChipSelect";
 import MentorCard from "@/components/MentorCard";
 import { ALL_TOPICS, INTERESTS } from "@/lib/data";
-import { useStore } from "@/lib/store";
+import { isExcellentMentor, useStore } from "@/lib/store";
 
 // 입시 전형 키워드: 멘토가 거친 전형(admission.path)에 맞춰 고른다
-const ADMISSION_FILTERS: { label: string; test: (path: string) => boolean }[] = [
-  { label: "수시", test: (p) => p.startsWith("수시") },
-  { label: "정시", test: (p) => p.startsWith("정시") },
-  { label: "학생부교과", test: (p) => p.includes("학생부교과") },
-  { label: "학생부종합", test: (p) => p.includes("학생부종합") },
-  { label: "논술", test: (p) => p.includes("논술") },
-  { label: "실기·특기자", test: (p) => p.includes("실기") },
-  { label: "농어촌", test: (p) => p.includes("농어촌") },
+// group "type"(수시/정시)과 group "track"(세부 전형)은 서로 "그리고"로, 같은 묶음 안에서는 "또는"으로 거른다
+// 예: 수시 + 농어촌 → 수시 농어촌 전형 멘토만 / 학생부교과 + 논술 → 둘 중 하나
+const ADMISSION_FILTERS: { label: string; group: "type" | "track"; test: (path: string) => boolean }[] = [
+  { label: "수시", group: "type", test: (p) => p.startsWith("수시") },
+  { label: "정시", group: "type", test: (p) => p.startsWith("정시") },
+  { label: "학생부교과", group: "track", test: (p) => p.includes("학생부교과") },
+  { label: "학생부종합", group: "track", test: (p) => p.includes("학생부종합") },
+  { label: "논술", group: "track", test: (p) => p.includes("논술") },
+  { label: "실기·특기자", group: "track", test: (p) => p.includes("실기") },
+  { label: "농어촌", group: "track", test: (p) => p.includes("농어촌") },
 ];
 
 export default function MentorsPage() {
-  const { visibleMentors } = useStore();
+  const store = useStore();
+  const { ready, visibleMentors } = store;
   const [interests, setInterests] = useState<string[]>([]);
   const [topics, setTopics] = useState<string[]>([]);
   const [paths, setPaths] = useState<string[]>([]);
   const [q, setQ] = useState("");
 
-  const matchesPath = (path?: string) =>
-    paths.length === 0 || (!!path && ADMISSION_FILTERS.some((f) => paths.includes(f.label) && f.test(path)));
+  const matchesPath = (path?: string) => {
+    if (paths.length === 0) return true;
+    if (!path) return false;
+    return (["type", "track"] as const).every((g) => {
+      const chosen = ADMISSION_FILTERS.filter((f) => f.group === g && paths.includes(f.label));
+      return chosen.length === 0 || chosen.some((f) => f.test(path));
+    });
+  };
 
+  // 우수 멘토를 먼저 보여 주고, 나머지는 원래 순서대로
+  const excellent = (id: string) => isExcellentMentor(store, id);
   const filtered = visibleMentors.filter(
     (m) =>
       (interests.length === 0 || m.interests.some((i) => interests.includes(i))) &&
       (topics.length === 0 || m.topics.some((t) => topics.includes(t))) &&
       matchesPath(m.admission?.path) &&
       (!q.trim() || `${m.name} ${m.university} ${m.major} ${m.intro} ${m.admission?.path ?? ""}`.includes(q.trim())),
-  );
+  ).sort((a, b) => Number(excellent(b.id)) - Number(excellent(a.id)));
+  const excellentCount = filtered.filter((m) => excellent(m.id)).length;
 
   return (
     <div className="container page">
@@ -56,14 +68,22 @@ export default function MentorsPage() {
         </div>
       </div>
 
-      {filtered.length === 0 ? (
+      {/* 저장된 데이터(우수 멘토 선정·활동 정지 등)를 읽기 전에는 목록을 그리지 않는다. 그리지 않으면 기본값 순서로 잠깐 보였다가 다시 정렬된다 */}
+      {!ready ? null : filtered.length === 0 ? (
         <div className="card empty">조건에 맞는 멘토가 없어요.</div>
       ) : (
-        <div className="grid">
-          {filtered.map((m) => (
-            <MentorCard key={m.id} mentor={m} />
-          ))}
-        </div>
+        <>
+          {excellentCount > 0 && (
+            <p className="excellent-note">
+              🏅 <strong>우수 멘토 {excellentCount}명</strong>을 먼저 보여 드려요. 후기와 멘토링 기록, 안전 기록을 보고 운영팀이 선정해요.
+            </p>
+          )}
+          <div className="grid">
+            {filtered.map((m) => (
+              <MentorCard key={m.id} mentor={m} excellent={excellent(m.id)} />
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

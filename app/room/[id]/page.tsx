@@ -9,7 +9,7 @@ import { useParams, useRouter } from "next/navigation";
 import Avatar from "@/components/Avatar";
 import LectureRecorder, { type LectureRecorderHandle } from "@/components/LectureRecorder";
 import { SESSION_MINUTES, formatSession } from "@/lib/schedule";
-import { agreeRecording, setRequestStatus, useStore } from "@/lib/store";
+import { agreeRecording, consentOf, sessionDayReached, setRequestStatus, useStore } from "@/lib/store";
 
 function formatTime(sec: number) {
   const m = Math.floor(sec / 60).toString().padStart(2, "0");
@@ -20,7 +20,8 @@ function formatTime(sec: number) {
 export default function RoomPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
-  const { ready, currentUser, requests, allMentors } = useStore();
+  const store = useStore();
+  const { ready, currentUser, requests, allMentors } = store;
   const req = requests.find((r) => r.id === id);
   const mentor = req ? allMentors.find((m) => m.id === req.mentorId) : undefined;
 
@@ -36,7 +37,7 @@ export default function RoomPage() {
   const streamRef = useRef<MediaStream | null>(null);
 
   const isMentor = currentUser?.role === "mentor";
-  const consented = !!req && !!(isMentor ? req.recordingConsent?.mentor : req.recordingConsent?.student);
+  const consented = !!req && !!consentOf(store, req, isMentor ? "mentor" : "student");
 
   // 녹음에 동의하고 입장하면, 상대방이 3초 뒤 입장하는 것처럼 보여준다
   useEffect(() => {
@@ -84,7 +85,8 @@ export default function RoomPage() {
   const allowed =
     req && currentUser && (isMentor ? req.mentorId === currentUser.mentorId : req.studentId === currentUser.id);
 
-  if (!req || !mentor || !allowed || req.status !== "scheduled") {
+  // 멘토링 날짜가 되기 전에는 들어갈 수 없다
+  if (!req || !mentor || !allowed || req.status !== "scheduled" || !sessionDayReached(req)) {
     return (
       <div className="container page empty">
         입장할 수 없는 멘토링이에요. <Link href="/mypage">마이페이지로</Link>
@@ -198,6 +200,7 @@ export default function RoomPage() {
           <LectureRecorder
             ref={recorderRef}
             autoStart={joined}
+            role={isMentor ? "mentor" : "student"}
             requestId={req.id}
             summary={req.summary}
             mentorId={mentor.id}

@@ -7,7 +7,7 @@ import VerificationBadge from "@/components/VerificationBadge";
 import { SEED_MENTORS } from "@/lib/data";
 import { ADMIN_OPEN_CHAT, ADMIN_UNLOCK_KEY } from "@/components/AdminChatMenu";
 import { MentorManagePanel, SanctionBadge } from "@/components/AdminMentorManage";
-import { PHONE_RE, activeSanction, adminUnread, answerInquiry, guardianMessage, guardianOf, maskPhone, sendGuardianAlert, isVerifiedMentor, reviewEnrollment, reviewVerification, setReportStatus, useStore } from "@/lib/store";
+import { PHONE_RE, activeSanction, isExcellentMentor, adminUnread, answerInquiry, guardianMessage, guardianOf, maskPhone, sendGuardianAlert, isVerifiedMentor, reviewEnrollment, reviewVerification, setReportStatus, useStore } from "@/lib/store";
 import type { Inquiry, Mentor, SafetyReport, VerificationStatus } from "@/lib/types";
 
 // 운영자 페이지 (시연용)
@@ -249,7 +249,15 @@ function GuardianStatus({ report }: { report: SafetyReport }) {
           </span>
         )}
         {!open && (
-          <button className={`btn btn-sm ${last ? "btn-ghost" : ""}`} onClick={() => setOpen(true)}>
+          <button
+            className={`btn btn-sm ${last ? "btn-ghost" : ""}`}
+            onClick={() => {
+              // 처음 화면을 그릴 때는 (시연방 데이터가 늦게 오면) 번호가 비어 있을 수 있어서, 여는 순간 최신 번호로 채운다
+              setPhone(last?.phone ?? target?.phone ?? "");
+              setMessage(guardianMessage(report));
+              setOpen(true);
+            }}
+          >
             {last ? "다시 보내기" : "보호자에게 직접 보내기"}
           </button>
         )}
@@ -257,6 +265,7 @@ function GuardianStatus({ report }: { report: SafetyReport }) {
       {open && (
         <div className="reject-box">
           <input className="input" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="보호자 휴대폰 번호 (010-1234-5678)" aria-label="보호자 휴대폰 번호" />
+          {!phoneOk && <div className="field-error">{phone.trim() ? "휴대폰 번호 형식으로 입력해 주세요." : "보낼 보호자 휴대폰 번호를 입력해 주세요."}</div>}
           <textarea className="textarea" value={message} onChange={(e) => setMessage(e.target.value)} aria-label="보낼 문자 내용" />
           <div className="req-actions">
             <button className="btn btn-sm btn-ghost" onClick={() => setOpen(false)}>취소</button>
@@ -477,7 +486,7 @@ export default function AdminPage() {
             placeholder="이름·대학·전공으로 멘토 찾기" aria-label="멘토 검색" />
           <table className="compare admin-table">
             <thead>
-              <tr><th>이름</th><th>대학 · 전공</th><th>구분</th><th>재학 인증</th><th>경력 조회</th><th>활동 상태</th><th>관리</th></tr>
+              <tr><th>이름</th><th>대학 · 전공</th><th>구분</th><th>재학 인증</th><th>경력 조회</th><th>활동 상태</th><th>우수 멘토</th><th>관리</th></tr>
             </thead>
             <tbody>
               {managedList.map((m) => {
@@ -491,6 +500,7 @@ export default function AdminPage() {
                     <td><VerificationBadge status={m.enrollment.status} kind="enrollment" /></td>
                     <td><VerificationBadge status={m.verification.status} /></td>
                     <td><SanctionBadge s={activeSanction(store, m.id)} /></td>
+                    <td>{isExcellentMentor(store, m.id) ? <span className="excellent-badge inline">🏅 우수</span> : <span className="muted">-</span>}</td>
                     <td className="manage-cell">
                       <button className="btn btn-sm btn-ghost" onClick={() => manage(m.id)}>관리</button>
                       {issues > 0 && <span className="manage-flag" title="처리 안 된 신고·알림">🚨 {issues}</span>}
