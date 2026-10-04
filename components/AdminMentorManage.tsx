@@ -34,11 +34,13 @@ export function SanctionBadge({ s }: { s?: MentorSanction }) {
 function AdminChat({ mentorId, mentorName }: { mentorId: string; mentorName: string }) {
   const { adminMessages } = useStore();
   const [text, setText] = useState("");
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const logRef = useRef<HTMLDivElement>(null);
   const thread = adminMessages.filter((m) => m.mentorId === mentorId);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ block: "nearest" });
+    // 페이지는 그대로 두고 대화 목록 상자 안에서만 맨 아래로 내린다
+    const log = logRef.current;
+    if (log) log.scrollTop = log.scrollHeight;
     markAdminChatRead(mentorId, "admin");
   }, [thread.length, mentorId]);
 
@@ -50,7 +52,7 @@ function AdminChat({ mentorId, mentorName }: { mentorId: string; mentorName: str
 
   return (
     <div className="admin-chat">
-      <div className="admin-chat-log">
+      <div className="admin-chat-log" ref={logRef}>
         {thread.length === 0 && <div className="muted admin-chat-empty">{mentorName} 멘토에게 첫 메시지를 보내 보세요.</div>}
         {thread.map((m) => (
           <div key={m.id} className={`chat-bubble-wrap ${m.from === "admin" ? "me" : "them"}`}>
@@ -58,7 +60,6 @@ function AdminChat({ mentorId, mentorName }: { mentorId: string; mentorName: str
             <span className="chat-meta">{m.from === "admin" ? "운영자" : `${mentorName} 멘토`} · {fmt(m.createdAt)}</span>
           </div>
         ))}
-        <div ref={bottomRef} />
       </div>
       <div className="chat-input">
         <textarea

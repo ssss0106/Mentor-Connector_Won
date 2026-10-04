@@ -17,7 +17,7 @@ export default function SupportChatPage() {
   const store = useStore();
   const { ready, currentUser, adminMessages } = store;
   const [text, setText] = useState("");
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const logRef = useRef<HTMLDivElement>(null);
   const mentorId = currentUser?.role === "mentor" ? currentUser.mentorId : undefined;
   const thread = adminMessages.filter((m) => m.mentorId === mentorId);
 
@@ -26,7 +26,9 @@ export default function SupportChatPage() {
   }, [ready, mentorId, router]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ block: "end" });
+    // 페이지는 그대로 두고 대화 목록 상자 안에서만 맨 아래로 내린다
+    const log = logRef.current;
+    if (log) log.scrollTop = log.scrollHeight;
     if (mentorId && currentUser) markAdminChatRead(mentorId, currentUser.id);
   }, [thread.length, mentorId, currentUser]);
 
@@ -58,7 +60,7 @@ export default function SupportChatPage() {
         </div>
       )}
 
-      <div className="chat-log card">
+      <div className="chat-log card" ref={logRef}>
         {thread.length === 0 && <div className="chat-empty muted">운영팀에 궁금한 점을 남겨 주세요.</div>}
         {thread.map((m) => {
           const mine = m.from === "mentor";
@@ -69,7 +71,6 @@ export default function SupportChatPage() {
             </div>
           );
         })}
-        <div ref={bottomRef} />
       </div>
 
       <form className="chat-input" onSubmit={send}>
