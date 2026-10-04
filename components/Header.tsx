@@ -5,10 +5,11 @@ import { usePathname } from "next/navigation";
 import AdminChatMenu from "./AdminChatMenu";
 import { logout, useStore } from "@/lib/store";
 import ChatMenu from "./ChatMenu";
+import ProcessMenu from "./ProcessMenu";
 import Logo from "./Logo";
 
 export default function Header() {
-  const { currentUser } = useStore();
+  const { ready, currentUser } = useStore();
   // 운영자 페이지에서는 운영자용 채팅 아이콘(멘토와의 대화)을 보여 준다
   const isAdminPage = usePathname()?.startsWith("/admin");
 
@@ -18,6 +19,8 @@ export default function Header() {
         <Link href="/" className="logo" aria-label="Menco 홈">
           <Logo />
         </Link>
+        {/* 로그인하기 전 방문자에게만 멘토링 진행절차를 보여 준다 */}
+        {ready && !currentUser && <ProcessMenu />}
         <nav className="nav">
           <Link href="/mentors">멘토 둘러보기</Link>
           {isAdminPage && <AdminChatMenu />}
