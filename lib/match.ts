@@ -27,10 +27,23 @@ export interface MatchResult {
 // 같은 지역 출신 멘토를 앞에 먼저 보여 주는 최대 인원
 export const REGION_FIRST_LIMIT = 3;
 
+// "심리학과"·"심리학"·"심리" → "심리" 처럼 학과 이름을 비교하기 쉬운 꼴로 바꾼다
+function normalizeMajor(s: string) {
+  let t = s.replace(/\s/g, "").replace(/(학부|전공|계열)$/, "");
+  if (t.endsWith("과")) t = t.slice(0, -1);
+  if (t.length > 2 && t.endsWith("학")) t = t.slice(0, -1);
+  return t;
+}
+
+// 그 자체로 하나의 학과인 전공: 이름이 포함된 다른 학과(화학 → 화학공학, 수학 → 수학교육, 의예 → 수의예)와는 다른 전공으로 본다
+const BASE_SUBJECTS = new Set(["화학", "수학", "물리", "생물", "생명과", "지리", "역사", "체육", "미술", "음악", "의예", "약"]);
+
 function majorMatches(desired: string, major: string): boolean {
-  const d = desired.replace(/\s|학과|학부|전공|과$/g, "");
-  const m = major.replace(/\s|학과|학부|전공/g, "");
+  const d = normalizeMajor(desired);
+  const m = normalizeMajor(major);
   if (!d || !m) return false;
+  if (d === m) return true;
+  if (BASE_SUBJECTS.has(d) || BASE_SUBJECTS.has(m)) return false;
   return m.includes(d) || d.includes(m);
 }
 

@@ -10,7 +10,7 @@ import Avatar from "@/components/Avatar";
 import StatusBadge from "@/components/StatusBadge";
 import { moderateChatMessage } from "@/lib/moderate-chat";
 import { formatSession } from "@/lib/schedule";
-import { REACTIONS, activeSanction, markChatRead, otherReadAt, reactMessage, roomActiveRequest, roomMessages, roomRequests, sendMessage, useStore } from "@/lib/store";
+import { REACTIONS, activeSanction, reactionsOf, markChatRead, otherReadAt, reactMessage, roomActiveRequest, roomMessages, roomRequests, sendMessage, useStore } from "@/lib/store";
 import type { ChatMessage, MentoringRequest } from "@/lib/types";
 
 const MAX_LENGTH = 500;
@@ -23,10 +23,10 @@ const timeLabel = (iso: string) =>
   new Date(iso).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" });
 
 // 메시지 아래에 남긴 감정을 모아서 보여 준다
-function Reactions({ m, myId }: { m: ChatMessage; myId: string }) {
-  const entries = Object.entries(m.reactions ?? {});
+function Reactions({ m, reactions, myId }: { m: ChatMessage; reactions: Record<string, string>; myId: string }) {
+  const entries = Object.entries(reactions);
   if (!entries.length) return null;
-  const counts = REACTIONS.map((e) => ({ e, n: entries.filter(([, v]) => v === e).length, mine: m.reactions?.[myId] === e })).filter((x) => x.n);
+  const counts = REACTIONS.map((e) => ({ e, n: entries.filter(([, v]) => v === e).length, mine: reactions[myId] === e })).filter((x) => x.n);
   return (
     <div className="chat-reactions">
       {counts.map((c) => (
@@ -184,6 +184,7 @@ export default function ChatPage() {
             );
           }
           const m = it.m;
+          const reactions = reactionsOf(store, m);
           const mine = m.senderId === currentUser.id;
           const unreadByOther = mine && m.createdAt > readAt;
           return (
@@ -204,7 +205,7 @@ export default function ChatPage() {
                       <button
                         key={e}
                         type="button"
-                        className={m.reactions?.[currentUser.id] === e ? "on" : ""}
+                        className={reactions[currentUser.id] === e ? "on" : ""}
                         onClick={() => {
                           reactMessage(m.id, currentUser.id, e);
                           setPicker(null);
@@ -217,7 +218,7 @@ export default function ChatPage() {
                   </div>
                 )}
               </div>
-              <Reactions m={m} myId={currentUser.id} />
+              <Reactions m={m} reactions={reactions} myId={currentUser.id} />
               <span className="chat-meta">
                 {mine ? "나" : m.senderName} · {timeLabel(m.createdAt)}
                 {m.id === lastReadMine && <span className="chat-read"> · 읽음</span>}

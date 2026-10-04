@@ -25,6 +25,7 @@ interface Props {
   studentName: string;
   sessionLabel: string; // 운영자 알림에 쓰는 세션 설명 (학생 이름은 넣지 않는다)
   autoStart: boolean; // 입장 전에 녹음에 동의했고 멘토링이 시작되면 true → 자동으로 녹음 시작
+  role: "student" | "mentor"; // 멘토 기기의 요약을 기본으로 쓰고, 학생 기기의 요약은 요약이 없을 때만 저장한다
 }
 
 export interface LectureRecorderHandle {
@@ -33,7 +34,7 @@ export interface LectureRecorderHandle {
 }
 
 const LectureRecorder = forwardRef<LectureRecorderHandle, Props>(function LectureRecorder(
-  { requestId, summary, mentorId, mentorName, studentName, sessionLabel, autoStart },
+  { requestId, summary, mentorId, mentorName, studentName, sessionLabel, autoStart, role },
   ref,
 ) {
   const [phase, setPhase] = useState<Phase>("idle");
@@ -103,7 +104,7 @@ const LectureRecorder = forwardRef<LectureRecorderHandle, Props>(function Lectur
       const res = await fetch("/api/summarize", { method: "POST", body: form });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error || "요약에 실패했어요. 잠시 후 다시 시도해 주세요.");
-      saveSummary(requestId, { ...data.summary, createdAt: new Date().toISOString() });
+      saveSummary(requestId, { ...data.summary, createdAt: new Date().toISOString() }, role);
       const sf = data.safety;
       if (sf?.flagged) {
         const severity = sf.severity === "urgent" ? "urgent" : "warning";

@@ -8,6 +8,9 @@ import Avatar from "./Avatar";
 import {
   activeSanction,
   banMentor,
+  isExcellentMentor,
+  mentorRecord,
+  setExcellent,
   liftSanction,
   markAdminChatRead,
   sendAdminMessage,
@@ -81,6 +84,32 @@ function AdminChat({ mentorId, mentorName }: { mentorId: string; mentorName: str
   );
 }
 
+// 우수 멘토 선정: 후기·멘토링·안전 기록을 보고 운영자가 선정하거나 해제한다
+function ExcellentRow({ mentorId, sanctioned }: { mentorId: string; sanctioned: boolean }) {
+  const store = useStore();
+  const on = isExcellentMentor(store, mentorId);
+  const rec = mentorRecord(store, mentorId);
+  return (
+    <div className={`excellent-row ${on ? "on" : ""}`}>
+      <div>
+        <strong>{on ? "🏅 우수 멘토로 선정됨" : "우수 멘토 선정"}</strong>
+        <div className="muted small">
+          완료한 멘토링 {rec.completed}회 · 후기 {rec.reviewCount}개{rec.reviewCount > 0 && ` (평균 ★${rec.average.toFixed(1)})`} · 안전 알림 {rec.alerts}건
+        </div>
+        <div className="muted small">우수 멘토는 &apos;멘토 둘러보기&apos;에서 가장 먼저 보이고 🏅 표시가 붙어요.</div>
+      </div>
+      <button
+        className={`btn btn-sm ${on ? "btn-ghost" : ""}`}
+        disabled={sanctioned && !on}
+        title={sanctioned && !on ? "활동이 제한된 멘토는 선정할 수 없어요" : undefined}
+        onClick={() => setExcellent(mentorId, !on)}
+      >
+        {on ? "선정 해제" : "우수 멘토로 선정"}
+      </button>
+    </div>
+  );
+}
+
 export function MentorManagePanel({ mentorId, onClose, openChat = false }: { mentorId: string; onClose: () => void; openChat?: boolean }) {
   const store = useStore();
   const { allMentors, sanctions, reports, inquiries, requests } = store;
@@ -117,6 +146,8 @@ export function MentorManagePanel({ mentorId, onClose, openChat = false }: { men
         <span>피해 신고 <strong>{reportCount}</strong>건</span>
         <Link href={`/mentors/${mentor.id}`}>프로필 보기 →</Link>
       </div>
+
+      <ExcellentRow mentorId={mentor.id} sanctioned={!!current} />
 
       {current ? (
         <div className="notice notice-warn manage-current">

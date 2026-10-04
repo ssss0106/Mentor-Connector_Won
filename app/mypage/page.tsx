@@ -9,7 +9,7 @@ import VerificationBadge from "@/components/VerificationBadge";
 import { STATUS_LABEL, categoryLabel, formatPrice } from "@/lib/data";
 import { formatSession } from "@/lib/schedule";
 import Avatar from "@/components/Avatar";
-import { activeSanction, agreeRecording, canChat, canStudentModify, cancelRequest, roomActiveRequest, sessionStarted, maskPhone, mentorUnreadFromAdmin, resetAll, respondOffer, setRequestStatus, unreadCount, useStore } from "@/lib/store";
+import { activeSanction, agreeRecording, canChat, consentOf, sessionDayReached, canStudentModify, cancelRequest, roomActiveRequest, sessionStarted, maskPhone, mentorUnreadFromAdmin, resetAll, respondOffer, setRequestStatus, unreadCount, useStore } from "@/lib/store";
 import type { Mentor, MentoringRequest, RequestStatus, VerificationStatus } from "@/lib/types";
 
 const FLOW: RequestStatus[] = ["pending", "approved", "scheduled", "completed"];
@@ -38,8 +38,11 @@ const NEXT_ACTION: Partial<Record<RequestStatus, { label: string; next: RequestS
 
 // 화상 멘토링 입장: 내가 AI 녹음·요약에 동의해야 입장 버튼을 누를 수 있다
 function RoomEntry({ req, asMentor }: { req: MentoringRequest; asMentor: boolean }) {
-  const mine = asMentor ? req.recordingConsent?.mentor : req.recordingConsent?.student;
-  const theirs = asMentor ? req.recordingConsent?.student : req.recordingConsent?.mentor;
+  const store = useStore();
+  const mine = consentOf(store, req, asMentor ? "mentor" : "student");
+  const theirs = consentOf(store, req, asMentor ? "student" : "mentor");
+  // 화상 멘토링은 멘토링 날짜부터 들어갈 수 있다
+  const dayReached = sessionDayReached(req);
   return (
     <div className="room-entry">
       <label className="check">
@@ -51,14 +54,20 @@ function RoomEntry({ req, asMentor }: { req: MentoringRequest; asMentor: boolean
       </label>
       <div className="room-entry-row">
         <span className="muted small">{asMentor ? "학생" : "멘토"} 동의: {theirs ? "완료" : "아직 안 했어요"}</span>
-        {mine ? (
+        {mine && dayReached ? (
           <Link href={`/room/${req.id}`} className="btn btn-sm btn-video">🎥 화상 멘토링 입장</Link>
         ) : (
-          <button type="button" className="btn btn-sm btn-video" disabled title="AI 녹음·요약에 동의해야 입장할 수 있어요">
+          <button
+            type="button"
+            className="btn btn-sm btn-video"
+            disabled
+            title={!mine ? "AI 녹음·요약에 동의해야 입장할 수 있어요" : "멘토링 날짜부터 입장할 수 있어요"}
+          >
             🎥 화상 멘토링 입장
           </button>
         )}
       </div>
+      {!dayReached && <div className="muted small room-entry-note">{formatSession(req.date, req.time)} 멘토링 당일부터 입장할 수 있어요.</div>}
     </div>
   );
 }
@@ -66,7 +75,9 @@ function RoomEntry({ req, asMentor }: { req: MentoringRequest; asMentor: boolean
 function RequestItem({ req, mentor, asMentor, unread, reviewed, locked }: { req: MentoringRequest; mentor?: Mentor; asMentor: boolean; unread: number; reviewed: boolean; locked?: boolean }) {
   // 활동이 제한된 멘토는 신청을 처리할 수 없고, 확정 전에 일정이 지난 신청은 진행할 수 없다
   const expired = (req.status === "pending" || req.status === "approved") && sessionStarted(req);
-  const action = locked || expired ? undefined : NEXT_ACTION[req.status];
+  // 멘토링 완료는 멘토링 날짜가 된 뒤에만 할 수 있다
+  const tooEarly = req.status === "scheduled" && !sessionDayReached(req);
+  const action = locked || expired || tooEarly ? undefined : NEXT_ACTION[req.status];
   return (
     <div className="card req">
       <div className="req-top">
@@ -89,6 +100,7 @@ function RequestItem({ req, mentor, asMentor, unread, reviewed, locked }: { req:
       )}
       <p className="req-msg">{req.message}</p>
       <StatusFlow status={req.status} />
+      {tooEarly && asMentor && !locked && <div className="muted small">멘토링 당일부터 완료 처리할 수 있어요.</div>}
       {expired && <div className="muted small">확정되기 전에 일정이 지났어요. {asMentor ? "학생이 새로 신청하면 진행할 수 있어요." : "새 일정으로 다시 신청해 주세요."}</div>}
       {req.status === "cancelled" && (
         <div className="muted small">{asMentor ? "학생이" : "내가"} {req.cancelledAt ? new Date(req.cancelledAt).toLocaleString("ko-KR", { dateStyle: "short", timeStyle: "short" }) : ""}에 취소한 신청이에요.</div>

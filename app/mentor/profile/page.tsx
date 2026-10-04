@@ -76,6 +76,8 @@ export default function MentorProfilePage() {
   const hsOk = hsGrade.trim() !== "" && hs >= 1 && hs <= 9;
   const gpa = Number(gpaValue);
   const gpaOk = gpaValue.trim() === "" || (gpa > 0 && gpa <= Number(gpaScale));
+  // 이미 등록한 멘토가 학교·전공을 바꾸는지 (바꾸면 재학 인증을 다시 받아야 한다)
+  const schoolChanged = !!existing && !isSeed && (existing.university !== university.trim() || existing.major !== major.trim());
   const valid = admissionPath && hsOk && gpaOk && name.trim() && university.trim() && major.trim() && topics.length > 0 && intro.trim() && hometown && campus && slots.length > 0 &&
     satisfaction && unknownBefore.trim() && hardPart.trim() && (!switched || switchReason.trim());
 
@@ -114,8 +116,9 @@ export default function MentorProfilePage() {
       existing?.id,
     );
     // 재학 인증·경력 조회 서류 중 아직 내지 않았거나 반려된 것이 있으면 인증 단계로 보낸다
+    // (학교나 전공을 바꾸면 재학 인증이 초기화되므로 역시 인증 단계로 보낸다)
     const needs = (st?: string) => !st || st === "not_submitted" || st === "rejected";
-    router.push(needs(existing?.verification.status) || needs(existing?.enrollment.status) ? "/mentor/verify" : "/mypage");
+    router.push(schoolChanged || needs(existing?.verification.status) || needs(existing?.enrollment.status) ? "/mentor/verify" : "/mypage");
   };
 
   return (
@@ -151,6 +154,10 @@ export default function MentorProfilePage() {
             <input id="major" className="input" value={major} onChange={(e) => setMajor(e.target.value)} placeholder="예: 심리학과" />
           </div>
         </div>
+
+        {schoolChanged && existing?.enrollment.status !== "not_submitted" && (
+          <div className="field-error">학교나 전공을 바꾸면 재학 인증을 다시 받아야 해요. 저장하면 재학 인증이 '서류 미제출'로 바뀌고, 인증을 마칠 때까지 학생에게 보이지 않아요.</div>
+        )}
 
         <div className="field">
           <label className="label">관심 분야</label>

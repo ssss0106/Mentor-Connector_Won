@@ -721,3 +721,55 @@ button.chat-bubble:focus-visible { outline: 2px solid var(--primary); outline-of
 @media (max-width: 760px) {
   .chat-picker button { font-size: 22px; padding: 3px; }
 }
+
+/* ---------- 자주 묻는 질문: 9개 질문이 한 화면에 모두 보이도록 작게 ---------- */
+.faq-section { padding: 44px 0; }
+.faq-section .lp-head { margin-bottom: 18px; }
+.faq-section .lp-head h2 { font-size: 24px; margin-bottom: 4px; }
+.faq-section .lp-head p { font-size: 14px; }
+.faq-list { max-width: 720px; }
+.faq-q { padding: 11px 4px; font-size: 14.5px; gap: 12px; }
+.faq-chevron { width: 20px; height: 20px; }
+.faq-a { padding: 0 4px 12px; font-size: 13.5px; line-height: 1.65; }
+@media (max-width: 760px) {
+  .faq-section { padding: 36px 0; }
+  .faq-section .lp-head h2 { font-size: 21px; }
+  .faq-q { padding: 10px 2px; font-size: 14px; }
+}
+
+/* ---------- 랜딩: 신청부터 완료까지 진행 과정 ---------- */
+.process { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; position: relative; }
+.process::before { content: ""; position: absolute; top: 24px; left: 8%; right: 8%; height: 2px; background: linear-gradient(90deg, var(--primary-soft), var(--primary), var(--primary-soft)); }
+.process-step { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; }
+.process-num {
+  position: relative; z-index: 1; width: 48px; height: 48px; border-radius: 50%; background: var(--primary); color: #fff;
+  font-weight: 800; font-size: 18px; display: grid; place-items: center; box-shadow: 0 0 0 6px #fff, 0 8px 18px rgba(91, 91, 240, 0.28);
+}
+.process-body { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+.process-body h3 { font-size: 16px; margin: 2px 0 0; }
+.process-body p { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.55; }
+.process-who { font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 999px; }
+.who-student { background: #eef0ff; color: var(--primary); }
+.who-mentor { background: #fff1e6; color: #c25a12; }
+.who-both { background: #e7f6ec; color: #1f7a3a; }
+.process-extra { margin-top: 32px; display: flex; flex-direction: column; gap: 8px; align-items: center; font-size: 14px; color: #4a4e63; text-align: center; }
+.process-extra strong { color: var(--text); }
+@media (max-width: 900px) {
+  .process { grid-template-columns: 1fr; gap: 0; max-width: 460px; margin: 0 auto; }
+  .process::before { top: 24px; bottom: 24px; left: 23px; right: auto; width: 2px; height: auto; background: var(--primary-soft); }
+  .process-step { flex-direction: row; align-items: flex-start; text-align: left; gap: 16px; padding-bottom: 20px; }
+  .process-body { align-items: flex-start; padding-top: 4px; }
+  .process-extra { align-items: flex-start; text-align: left; }
+}
+
+/* ---------- 우수 멘토 ---------- */
+.mentor-card.is-excellent { border-color: #f3c46b; box-shadow: 0 6px 20px rgba(230, 167, 0, 0.12); }
+.excellent-badge {
+  align-self: flex-start; display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 800;
+  color: #8a5a00; background: linear-gradient(135deg, #fff3cf, #ffe39a); border: 1px solid #f3c46b; padding: 3px 10px; border-radius: 999px;
+}
+.excellent-badge.inline { align-self: auto; }
+.excellent-note { margin: 0 0 14px; font-size: 14px; color: #6b5310; background: #fff8e6; border: 1px solid #f6dd9c; border-radius: 12px; padding: 10px 14px; }
+.excellent-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 14px; border-radius: 12px; background: #f7f8fc; border: 1px solid var(--border); }
+.excellent-row.on { background: #fff8e6; border-color: #f6dd9c; }
+.excellent-row .small { margin-top: 2px; }

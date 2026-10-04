@@ -7,7 +7,7 @@ import VerificationBadge from "@/components/VerificationBadge";
 import { SEED_MENTORS } from "@/lib/data";
 import { ADMIN_OPEN_CHAT, ADMIN_UNLOCK_KEY } from "@/components/AdminChatMenu";
 import { MentorManagePanel, SanctionBadge } from "@/components/AdminMentorManage";
-import { PHONE_RE, activeSanction, adminUnread, answerInquiry, guardianMessage, guardianOf, maskPhone, sendGuardianAlert, isVerifiedMentor, reviewEnrollment, reviewVerification, setReportStatus, useStore } from "@/lib/store";
+import { PHONE_RE, activeSanction, isExcellentMentor, adminUnread, answerInquiry, guardianMessage, guardianOf, maskPhone, sendGuardianAlert, isVerifiedMentor, reviewEnrollment, reviewVerification, setReportStatus, useStore } from "@/lib/store";
 import type { Inquiry, Mentor, SafetyReport, VerificationStatus } from "@/lib/types";
 
 // 운영자 페이지 (시연용)
@@ -477,7 +477,7 @@ export default function AdminPage() {
             placeholder="이름·대학·전공으로 멘토 찾기" aria-label="멘토 검색" />
           <table className="compare admin-table">
             <thead>
-              <tr><th>이름</th><th>대학 · 전공</th><th>구분</th><th>재학 인증</th><th>경력 조회</th><th>활동 상태</th><th>관리</th></tr>
+              <tr><th>이름</th><th>대학 · 전공</th><th>구분</th><th>재학 인증</th><th>경력 조회</th><th>활동 상태</th><th>우수 멘토</th><th>관리</th></tr>
             </thead>
             <tbody>
               {managedList.map((m) => {
@@ -491,6 +491,7 @@ export default function AdminPage() {
                     <td><VerificationBadge status={m.enrollment.status} kind="enrollment" /></td>
                     <td><VerificationBadge status={m.verification.status} /></td>
                     <td><SanctionBadge s={activeSanction(store, m.id)} /></td>
+                    <td>{isExcellentMentor(store, m.id) ? <span className="excellent-badge inline">🏅 우수</span> : <span className="muted">-</span>}</td>
                     <td className="manage-cell">
                       <button className="btn btn-sm btn-ghost" onClick={() => manage(m.id)}>관리</button>
                       {issues > 0 && <span className="manage-flag" title="처리 안 된 신고·알림">🚨 {issues}</span>}
