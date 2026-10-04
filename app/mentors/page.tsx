@@ -21,7 +21,7 @@ const ADMISSION_FILTERS: { label: string; group: "type" | "track"; test: (path: 
 
 export default function MentorsPage() {
   const store = useStore();
-  const { visibleMentors } = store;
+  const { ready, visibleMentors } = store;
   const [interests, setInterests] = useState<string[]>([]);
   const [topics, setTopics] = useState<string[]>([]);
   const [paths, setPaths] = useState<string[]>([]);
@@ -68,7 +68,8 @@ export default function MentorsPage() {
         </div>
       </div>
 
-      {filtered.length === 0 ? (
+      {/* 저장된 데이터(우수 멘토 선정·활동 정지 등)를 읽기 전에는 목록을 그리지 않는다. 그리지 않으면 기본값 순서로 잠깐 보였다가 다시 정렬된다 */}
+      {!ready ? null : filtered.length === 0 ? (
         <div className="card empty">조건에 맞는 멘토가 없어요.</div>
       ) : (
         <>
