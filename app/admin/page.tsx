@@ -7,7 +7,7 @@ import VerificationBadge from "@/components/VerificationBadge";
 import { SEED_MENTORS } from "@/lib/data";
 import { ADMIN_OPEN_CHAT, ADMIN_UNLOCK_KEY } from "@/components/AdminChatMenu";
 import { MentorManagePanel, SanctionBadge } from "@/components/AdminMentorManage";
-import { PHONE_RE, activeSanction, isExcellentMentor, adminUnread, answerInquiry, guardianMessage, guardianOf, maskPhone, sendGuardianAlert, isVerifiedMentor, reviewEnrollment, reviewVerification, setReportStatus, useStore } from "@/lib/store";
+import { CHAT_ALERT_LIMIT, PHONE_RE, activeSanction, chatAlertCount, isExcellentMentor, unlockChat, adminUnread, answerInquiry, guardianMessage, guardianOf, maskPhone, sendGuardianAlert, isVerifiedMentor, reviewEnrollment, reviewVerification, setReportStatus, useStore } from "@/lib/store";
 import type { Inquiry, Mentor, SafetyReport, VerificationStatus } from "@/lib/types";
 
 // 운영자 페이지 (시연용)
@@ -286,6 +286,28 @@ function GuardianStatus({ report }: { report: SafetyReport }) {
   );
 }
 
+// 채팅 안전 알림 횟수와 채팅 제한 상태 (3번이면 자동으로 제한, 운영자가 확인 후 풀 수 있다)
+function ChatLockStatus({ report }: { report: SafetyReport }) {
+  const store = useStore();
+  const req = store.requests.find((r) => r.id === report.requestId);
+  if (!req) return null;
+  const count = chatAlertCount(store, req);
+  const locked = count >= CHAT_ALERT_LIMIT;
+  return (
+    <div className={`chat-lock-status ${locked ? "locked" : ""}`}>
+      <span>
+        {locked ? "🔒 채팅 제한 중" : "💬 채팅 가능"} · 이 채팅방 안전 알림 <strong>{Math.min(count, CHAT_ALERT_LIMIT)}/{CHAT_ALERT_LIMIT}</strong>회
+        <span className="muted"> (오탐으로 처리한 알림은 세지 않아요)</span>
+      </span>
+      {locked && (
+        <button className="btn btn-sm btn-ghost" onClick={() => confirm("확인을 마치고 이 채팅방의 제한을 풀까요?") && unlockChat(req.id)}>
+          채팅 제한 풀기
+        </button>
+      )}
+    </div>
+  );
+}
+
 function SafetyCard({ report, onManage }: { report: SafetyReport; onManage: () => void }) {
   const urgent = report.severity === "urgent";
   return (
@@ -308,6 +330,7 @@ function SafetyCard({ report, onManage }: { report: SafetyReport; onManage: () =
       <p className="safety-quote">“{report.excerpt || "발언 내용 없음"}”</p>
       <p className="muted" style={{ margin: 0 }}>{report.reason}</p>
       <GuardianStatus report={report} />
+      {report.source === "chat" && <ChatLockStatus report={report} />}
       <div className="req-actions">
         <button className="btn btn-sm btn-outline" onClick={onManage}>멘토 활동 관리 →</button>
         {report.status === "new" && (
