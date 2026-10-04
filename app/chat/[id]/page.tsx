@@ -53,7 +53,6 @@ export default function ChatPage() {
   const { ready, currentUser, requests, allMentors } = store;
   const [text, setText] = useState("");
   const [picker, setPicker] = useState<string | null>(null); // 감정 고르기를 연 메시지 id
-  const bottomRef = useRef<HTMLDivElement>(null);
   const logRef = useRef<HTMLDivElement>(null);
 
   const req = requests.find((r) => r.id === id);
@@ -65,7 +64,9 @@ export default function ChatPage() {
 
   // 새 메시지가 오면 맨 아래로 스크롤하고 읽음 처리한다
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ block: "end" });
+    // 페이지 전체가 아니라 대화 목록 상자 안에서만 맨 아래로 내린다 (scrollIntoView는 페이지까지 움직여 입력창이 가려졌다)
+    const log = logRef.current;
+    if (log) log.scrollTop = log.scrollHeight;
     if (allowed && currentUser && req) markChatRead(req, currentUser.id);
   }, [chat.length, allowed, currentUser?.id, req?.id]);
 
@@ -230,7 +231,6 @@ export default function ChatPage() {
             {open ? "첫 메시지를 보내 인사해 보세요." : locked ? "지금은 대화할 수 없어요." : latest.status === "cancelled" ? "취소된 멘토링이에요." : "멘토가 신청을 승인하면 채팅을 시작할 수 있어요."}
           </div>
         )}
-        <div ref={bottomRef} />
       </div>
 
       <form className="chat-input" onSubmit={send}>
