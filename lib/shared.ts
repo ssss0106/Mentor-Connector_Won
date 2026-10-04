@@ -6,7 +6,7 @@
 // - 2~3초마다 서버의 최신 상태를 받아 온다. 내 변경이 서버에 반영되는 중에는 받아 온 상태로 덮어쓰지 않는다.
 // - 로그인한 사용자는 이 브라우저에만 저장해서, 브라우저마다 다른 사람으로 동시에 로그인할 수 있다.
 
-import { applyOps, diffDocs, type Doc, type Op } from "./shared-ops";
+import { CLIENT_CHUNK, applyOps, diffDocs, type Doc, type Op } from "./shared-ops";
 
 export const CHANGE_EVENT = "mentor-connector:change";
 const ROOM_KEY = "mentor-connector:room";
@@ -93,29 +93,62 @@ export function resetRoom() {
   emit();
 }
 
+class RejectedError extends Error {}
+
+async function post(ops: Op[]) {
+  const res = await fetch("/api/db", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ room, ops }) });
+  if (res.ok) return res.json();
+  const data = await res.json().catch(() => ({}));
+  const message = data.error || `서버 오류 (${res.status})`;
+  // 400은 보낸 내용 자체가 거절된 것이라 같은 내용을 다시 보내도 소용없다
+  throw res.status === 400 ? new RejectedError(message) : new Error(message);
+}
+
+function accept(data: { data?: Doc; version: number }, count: number) {
+  pending = pending.slice(count);
+  serverDoc = data.data ?? {};
+  version = data.version;
+  viewCache = null;
+  retryAt = 0;
+  persist();
+}
+
 async function flush() {
   if (!room || inFlight || pending.length === 0) return;
   if (Date.now() < retryAt) return;
   inFlight = true;
-  const batch = pending.slice();
+  const batch = pending.slice(0, CLIENT_CHUNK);
   try {
-    const res = await fetch("/api/db", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ room, ops: batch }) });
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data.error || `서버 오류 (${res.status})`);
-    }
-    const data = await res.json();
-    pending = pending.slice(batch.length);
-    serverDoc = data.data ?? {};
-    version = data.version;
-    viewCache = null;
-    retryAt = 0;
-    persist();
+    accept(await post(batch), batch.length);
     setStatus("online");
     emit();
   } catch (e) {
-    retryAt = Date.now() + 3000;
-    setStatus("error", e instanceof Error ? e.message : "연결 오류");
+    if (e instanceof RejectedError) {
+      // 한 번에 보낸 변경 중 거절되는 것만 골라서 버리고, 나머지는 하나씩 다시 보낸다
+      let dropped = 0;
+      for (const op of batch) {
+        try {
+          accept(await post([op]), 1);
+        } catch (e2) {
+          if (e2 instanceof RejectedError) {
+            pending = pending.slice(1);
+            dropped++;
+            persist();
+          } else {
+            retryAt = Date.now() + 3000;
+            setStatus("error", e2 instanceof Error ? e2.message : "연결 오류");
+            inFlight = false;
+            return;
+          }
+        }
+      }
+      viewCache = null;
+      setStatus(dropped ? "online" : "error", dropped ? `${dropped}개 변경이 서버에서 거절되어 건너뛰었어요 (${e.message})` : e.message);
+      emit();
+    } else {
+      retryAt = Date.now() + 3000;
+      setStatus("error", e instanceof Error ? e.message : "연결 오류");
+    }
   } finally {
     inFlight = false;
     if (pending.length && Date.now() >= retryAt) void flush();
@@ -191,7 +224,29 @@ export function connectRoom(code: string): string | null {
   return null;
 }
 
+// 이 브라우저에 저장된 시연방 캐시(밀린 변경 포함)를 지우고 서버 상태부터 다시 받아 온다
+export function resetSync() {
+  if (!room) return;
+  const r = room;
+  try {
+    localStorage.removeItem(cacheKey(r));
+  } catch {}
+  serverDoc = {};
+  version = 0;
+  pending = [];
+  viewCache = null;
+  retryAt = 0;
+  setStatus("connecting");
+  void poll();
+  emit();
+}
+
 export function disconnectRoom() {
+  if (room) {
+    try {
+      localStorage.removeItem(cacheKey(room));
+    } catch {}
+  }
   room = null;
   status = "off";
   lastError = "";

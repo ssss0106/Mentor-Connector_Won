@@ -4,7 +4,7 @@
 // 방 코드가 없으면 지금처럼 이 브라우저에만 저장된다.
 
 import { useEffect, useState } from "react";
-import { CHANGE_EVENT, connectRoom, disconnectRoom, getSyncInfo, stripRoomParam } from "@/lib/shared";
+import { CHANGE_EVENT, connectRoom, disconnectRoom, getSyncInfo, resetSync, stripRoomParam } from "@/lib/shared";
 
 export default function RoomBadge() {
   const [info, setInfo] = useState<ReturnType<typeof getSyncInfo>>({ room: null, status: "off", error: "" });
@@ -50,6 +50,12 @@ export default function RoomBadge() {
                 같은 방 코드를 입력한 브라우저끼리 신청·채팅·후기 등이 실시간으로 공유돼요. 시연용 가상 데이터만 쓰고, 코드는 팀 안에서만 알려 주세요.
               </p>
               {info.status === "error" && <p style={{ color: "#b45a00" }}>{info.error || "연결에 문제가 있어요."} 자동으로 다시 시도하는 중이에요.</p>}
+              {info.status === "online" && info.error && <p style={{ color: "#b45a00" }}>{info.error}</p>}
+              {(info.status === "error" || info.error) && (
+                <button className="btn btn-sm" onClick={() => resetSync()}>
+                  캐시 지우고 다시 연결
+                </button>
+              )}
               <button
                 className="btn btn-sm btn-ghost"
                 onClick={() => {

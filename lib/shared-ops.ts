@@ -85,20 +85,26 @@ export function applyOps(doc: Doc, ops: Op[]): Doc {
   return d;
 }
 
-// 서버가 브라우저에서 받은 op를 검사한다 (모양이 맞지 않으면 버린다)
-export function cleanOps(raw: unknown): Op[] | null {
-  if (!Array.isArray(raw) || raw.length > 300) return null;
+// 서버가 브라우저에서 받은 op를 검사한다 (모양이 맞지 않으면 사유와 함께 거절한다)
+export const MAX_OPS_PER_REQUEST = 1000;
+export const CLIENT_CHUNK = 150;
+
+export function cleanOps(raw: unknown): { ops: Op[] } | { error: string } {
+  if (!Array.isArray(raw)) return { error: "변경 내용이 배열이 아니에요" };
+  if (raw.length > MAX_OPS_PER_REQUEST) return { error: `변경 내용이 너무 많아요 (${raw.length}개)` };
   const out: Op[] = [];
-  for (const o of raw) {
-    if (!isObj(o)) return null;
+  for (let i = 0; i < raw.length; i++) {
+    const o = raw[i];
+    const where = `${i + 1}번째 변경`;
+    if (!isObj(o)) return { error: `${where}: 형식이 아니에요` };
     if (o.t === "reset") out.push({ t: "reset" });
-    else if (typeof o.k !== "string" || !validKey(o.k)) return null;
+    else if (typeof o.k !== "string" || !validKey(o.k)) return { error: `${where}: 항목 이름이 올바르지 않아요 (${String(o.k).slice(0, 30)})` };
     else if (o.t === "up" && (o.kf === "id" || o.kf === "userId") && isObj(o.item)) out.push({ t: "up", k: o.k, kf: o.kf, item: o.item });
     else if (o.t === "del" && (o.kf === "id" || o.kf === "userId")) out.push({ t: "del", k: o.k, kf: o.kf, key: o.key });
     else if (o.t === "set" && typeof o.key === "string" && !BAD.has(o.key)) out.push({ t: "set", k: o.k, key: o.key, value: o.value });
     else if (o.t === "unset" && typeof o.key === "string") out.push({ t: "unset", k: o.k, key: o.key });
     else if (o.t === "put") out.push({ t: "put", k: o.k, value: o.value });
-    else return null;
+    else return { error: `${where}: 알 수 없는 종류예요 (${String(o.t).slice(0, 10)}:${o.k})` };
   }
-  return out;
+  return { ops: out };
 }

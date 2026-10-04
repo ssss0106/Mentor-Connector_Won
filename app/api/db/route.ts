@@ -40,8 +40,10 @@ export async function POST(req: Request) {
     return fail("요청을 읽을 수 없어요.", 400);
   }
   const room = String(body.room ?? "");
-  const ops = cleanOps(body.ops);
-  if (!ROOM.test(room) || !ops) return fail("잘못된 요청이에요.", 400);
+  if (!ROOM.test(room)) return fail("잘못된 요청이에요. (방 코드는 영문·숫자·-·_ 3~40자예요)", 400);
+  const cleaned = cleanOps(body.ops);
+  if ("error" in cleaned) return fail(`잘못된 요청이에요. (${cleaned.error})`, 400);
+  const ops = cleaned.ops;
 
   try {
     // 읽은 뒤 그 사이 다른 브라우저가 저장했다면(버전이 달라지면) 처음부터 다시 반영한다
