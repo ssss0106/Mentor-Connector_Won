@@ -10,7 +10,7 @@ import Avatar from "@/components/Avatar";
 import StatusBadge from "@/components/StatusBadge";
 import { moderateChatMessage } from "@/lib/moderate-chat";
 import { formatSession } from "@/lib/schedule";
-import { REACTIONS, activeSanction, reactionsOf, markChatRead, otherReadAt, reactMessage, roomActiveRequest, roomMessages, roomRequests, sendMessage, useStore } from "@/lib/store";
+import { CHAT_ALERT_LIMIT, QUIET_NOTICE, REACTIONS, activeSanction, chatAlertCount, isQuietHours, reactionsOf, markChatRead, unreadCount, otherReadAt, reactMessage, roomActiveRequest, roomMessages, roomRequests, sendMessage, useStore } from "@/lib/store";
 import type { ChatMessage, MentoringRequest } from "@/lib/types";
 
 const MAX_LENGTH = 500;
@@ -61,14 +61,36 @@ export default function ChatPage() {
   const allowed =
     !!req && !!currentUser && (isMentor ? req.mentorId === currentUser.mentorId : req.studentId === currentUser.id);
   const chat = req && allowed ? roomMessages(store, req) : [];
+  const unreadHere = req && allowed && currentUser ? unreadCount(store, req, currentUser.id) : 0;
+  const [now, setNow] = useState(() => new Date());
 
-  // 새 메시지가 오면 맨 아래로 스크롤하고 읽음 처리한다
+  // 운영 시간(오전 8시~오후 10시)이 바뀌는 순간을 놓치지 않도록 30초마다 시각을 다시 본다
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 30_000);
+    return () => clearInterval(t);
+  }, []);
+
+  // 새 메시지가 오면 맨 아래로 스크롤한다
   useEffect(() => {
     // 페이지 전체가 아니라 대화 목록 상자 안에서만 맨 아래로 내린다 (scrollIntoView는 페이지까지 움직여 입력창이 가려졌다)
     const log = logRef.current;
     if (log) log.scrollTop = log.scrollHeight;
-    if (allowed && currentUser && req) markChatRead(req, currentUser.id);
-  }, [chat.length, allowed, currentUser?.id, req?.id]);
+  }, [chat.length]);
+
+  // 채팅방을 보고 있는 동안 안 읽은 메시지가 생기면 바로 읽음 처리한다 (다른 탭에 있다가 돌아왔을 때도)
+  useEffect(() => {
+    if (!allowed || !currentUser || !req) return;
+    const read = () => {
+      if (document.visibilityState === "visible") markChatRead(req, currentUser.id);
+    };
+    read();
+    window.addEventListener("focus", read);
+    document.addEventListener("visibilitychange", read);
+    return () => {
+      window.removeEventListener("focus", read);
+      document.removeEventListener("visibilitychange", read);
+    };
+  }, [unreadHere, chat.length, allowed, currentUser?.id, req?.id]);
 
   // 감정 고르기 창은 바깥을 누르거나 Esc로 닫는다
   useEffect(() => {
@@ -102,7 +124,11 @@ export default function ChatPage() {
     ? { name: `${req.studentName} 학생`, seed: req.studentName }
     : { name: `${mentor.name} 멘토`, seed: mentor.id + mentor.name };
   const locked = !!activeSanction(store, mentor.id);
-  const open = !!active && !locked;
+  // 채팅에서 안전 알림이 3번 생기면 두 사람 모두 채팅할 수 없다
+  const alertCount = chatAlertCount(store, req);
+  const alertLocked = alertCount >= CHAT_ALERT_LIMIT;
+  const quiet = isQuietHours(now);
+  const open = !!active && !locked && !alertLocked && !quiet;
   const trimmed = text.trim();
   const blocked = PHONE_PATTERN.test(trimmed);
   const outside = !blocked && OUTSIDE_PATTERN.test(trimmed);
@@ -158,6 +184,13 @@ export default function ChatPage() {
         <span className="muted">🛡️ 안전을 위해 보낸 메시지는 AI(OpenAI)로 점검돼요. 비속어·괴롭힘·외부 연락 유도가 감지되면 해당 메시지의 일부가 운영자에게 전달되고, 학생의 보호자에게도 바로 알림이 가요.</span>
       </div>
 
+      {!locked && alertLocked && (
+        <div className="chat-notice sanction-notice">
+          🔒 이 채팅방에서 안전 알림이 {CHAT_ALERT_LIMIT}번 감지되어 채팅이 제한됐어요. 운영팀이 확인한 뒤 다시 열어 드릴게요.
+        </div>
+      )}
+      {!locked && !alertLocked && quiet && active && <div className="chat-notice quiet-notice">🌙 {QUIET_NOTICE}</div>}
+
       {locked && (
         <div className="chat-notice sanction-notice">
           {isMentor ? "운영 정책에 따라 멘토 활동이 제한되어 지금은 메시지를 보낼 수 없어요. 마이페이지에서 운영팀 안내를 확인해 주세요." : "운영 정책에 따라 이 멘토의 활동이 제한되어 지금은 대화할 수 없어요."}
@@ -184,6 +217,15 @@ export default function ChatPage() {
             );
           }
           const m = it.m;
+          // 운영팀이 자동으로 보낸 안내는 가운데에 따로 보여 준다
+          if (m.system) {
+            return (
+              <div key={m.id} className={`chat-system chat-system-${m.system}`}>
+                <div className="chat-system-text">{m.text}</div>
+                <span className="chat-meta">{m.senderName} · {timeLabel(m.createdAt)}</span>
+              </div>
+            );
+          }
           const reactions = reactionsOf(store, m);
           const mine = m.senderId === currentUser.id;
           const unreadByOther = mine && m.createdAt > readAt;
@@ -248,7 +290,7 @@ export default function ChatPage() {
               send();
             }
           }}
-          placeholder={open ? "메시지를 입력하세요 (Enter 전송, Shift+Enter 줄바꿈)" : locked ? "지금은 메시지를 보낼 수 없어요" : latest.status === "cancelled" ? "취소된 멘토링이라 메시지를 보낼 수 없어요" : "멘토 승인 후 채팅할 수 있어요"}
+          placeholder={open ? "메시지를 입력하세요 (Enter 전송, Shift+Enter 줄바꿈)" : locked || alertLocked ? "지금은 메시지를 보낼 수 없어요" : quiet && active ? QUIET_NOTICE : latest.status === "cancelled" ? "취소된 멘토링이라 메시지를 보낼 수 없어요" : "멘토 승인 후 채팅할 수 있어요"}
         />
         <button className="btn" disabled={!trimmed || blocked || !open}>
           보내기

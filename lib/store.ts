@@ -34,9 +34,10 @@ interface DB {
   recordingConsents: Record<string, string>; // "신청id:student|mentor" → 녹음 동의 시각
   reactions: Record<string, string>; // "메시지id:사용자id" → 감정 이모지
   excellent: Record<string, boolean>; // 멘토 id → 우수 멘토 선정 여부 (기본 선정 멘토를 해제할 때 false)
+  chatUnlocks: Record<string, string>; // 채팅방(roomKey) → 운영자가 채팅 제한을 푼 시각 (이후 안전 알림만 다시 센다)
 }
 
-const empty: DB = { users: [], currentUserId: null, profiles: [], mentors: [], requests: [], messages: [], reviews: [], reports: [], lastRead: {}, inquiries: [], sanctions: [], adminMessages: [], adminRead: {}, guardianAlerts: [], offers: [], recordingConsents: {}, reactions: {}, excellent: {} };
+const empty: DB = { users: [], currentUserId: null, profiles: [], mentors: [], requests: [], messages: [], reviews: [], reports: [], lastRead: {}, inquiries: [], sanctions: [], adminMessages: [], adminRead: {}, guardianAlerts: [], offers: [], recordingConsents: {}, reactions: {}, excellent: {}, chatUnlocks: {} };
 
 // 경력 조회 기능 이전에 저장된 멘토는 "서류 미제출" 상태로 본다
 function normalize(db: DB): DB {
@@ -295,6 +296,7 @@ export function sendMessage(pair: Pair, sender: User, text: string): MentoringRe
   const now = new Date().toISOString();
   let target: MentoringRequest | undefined;
   update((db) => {
+    if (isQuietHours() || chatAlertLocked(db, pair)) return;
     target = roomActiveRequest(db, pair);
     if (!target) return;
     db.messages.push({ id: uid("c"), requestId: target.id, senderId: sender.id, senderName: sender.name, text, createdAt: now });
@@ -439,7 +441,7 @@ export function addReport(r: Omit<SafetyReport, "id" | "status" | "createdAt">) 
   update((db) => {
     const report: SafetyReport = { ...r, id: uid("sf"), status: "new", createdAt: new Date().toISOString() };
     db.reports.push(report);
-    // 보호자 연락처가 있으면 바로 보호자에게 알린다
+    // 보호자 연락처가 있으면 바로 보호자에게 알리고, 멘토·학생 채팅방에도 운영팀 안내를 자동으로 남긴다
     const target = guardianOf(db, report);
     if (target?.phone) {
       db.guardianAlerts.push({
@@ -452,8 +454,64 @@ export function addReport(r: Omit<SafetyReport, "id" | "status" | "createdAt">) 
         sentBy: "auto",
         createdAt: report.createdAt,
       });
+      postSystemMessage(db, report.requestId, "guardian", guardianNotice(report));
+    }
+    // 채팅에서 안전 알림이 3번 생기면 그 순간부터 두 사람 모두 채팅할 수 없다
+    const req = db.requests.find((x) => x.id === report.requestId);
+    if (report.source === "chat" && req && chatAlertCount(db, req) === CHAT_ALERT_LIMIT) {
+      postSystemMessage(
+        db,
+        report.requestId,
+        "lock",
+        `🔒 [Menco 운영팀 자동 안내] 이 채팅방에서 안전 알림이 ${CHAT_ALERT_LIMIT}번 감지되어 지금부터 채팅이 제한돼요. 운영팀이 내용을 확인한 뒤 안내해 드릴게요.`,
+      );
     }
   });
+}
+
+// ---------- 운영팀 자동 안내 · 채팅 제한 ----------
+
+export const CHAT_ALERT_LIMIT = 3;
+const SYSTEM_SENDER = "system";
+
+// 멘토·학생 채팅방에 운영팀 이름으로 안내 메시지를 남긴다 (운영자가 직접 쓰지 않고 자동으로 보낸다)
+function postSystemMessage(db: DB, requestId: string, kind: NonNullable<ChatMessage["system"]>, text: string) {
+  const now = new Date().toISOString();
+  db.messages.push({ id: uid("c"), requestId, senderId: SYSTEM_SENDER, senderName: "Menco 운영팀", text, createdAt: now, system: kind });
+}
+
+function guardianNotice(report: Pick<SafetyReport, "source" | "types">) {
+  const where = report.source === "class" ? "화상 멘토링" : "채팅";
+  const crisis = report.types.includes("자해·위기")
+    ? " 힘든 마음이 있다면 혼자 참지 말고 청소년전화 1388이나 자살예방 상담전화 109에 이야기해 주세요."
+    : " 서로 존중하는 말로 대화해 주세요.";
+  return `🛡️ [Menco 운영팀 자동 안내] 방금 ${where}에서 안전 점검 알림(${report.types.join(", ") || "부적절한 표현"})이 감지되어 학생의 보호자에게 안내 문자를 보냈어요.${crisis}`;
+}
+
+// 이 채팅방(같은 학생·멘토)에서 생긴 채팅 안전 알림 수. 오탐으로 처리한 알림과 운영자가 제한을 풀기 전의 알림은 세지 않는다.
+export function chatAlertCount(db: Pick<DB, "requests" | "reports" | "chatUnlocks">, pair: Pair): number {
+  const ids = new Set(roomRequests(db, pair).map((x) => x.id));
+  const since = db.chatUnlocks[roomKey(pair)] ?? "";
+  return db.reports.filter((r) => r.source === "chat" && r.status !== "dismissed" && ids.has(r.requestId) && r.createdAt > since).length;
+}
+
+export const chatAlertLocked = (db: Pick<DB, "requests" | "reports" | "chatUnlocks">, pair: Pair) => chatAlertCount(db, pair) >= CHAT_ALERT_LIMIT;
+
+// 운영자가 확인한 뒤 채팅 제한을 푼다 (그 뒤의 안전 알림부터 다시 센다)
+export function unlockChat(requestId: string) {
+  update((db) => {
+    const req = db.requests.find((x) => x.id === requestId);
+    if (!req) return;
+    db.chatUnlocks[roomKey(req)] = new Date().toISOString();
+    postSystemMessage(db, requestId, "unlock", "🔓 [Menco 운영팀 안내] 운영팀이 확인을 마치고 채팅 제한을 풀었어요. 다시 대화할 수 있어요.");
+  });
+}
+
+// 멘토·학생 채팅 운영 시간: 오전 8시 ~ 오후 10시
+export const QUIET_NOTICE = "현재는 멘토링 운영 시간이 아닙니다. 내일 아침 8시부터 채팅이 가능합니다.";
+export function isQuietHours(now = new Date()) {
+  const h = now.getHours();
+  return h >= 22 || h < 8;
 }
 
 // ---------- 보호자 알림 ----------
@@ -487,6 +545,7 @@ export function sendGuardianAlert(reportId: string, phone: string, message: stri
       sentBy: "admin",
       createdAt: new Date().toISOString(),
     });
+    postSystemMessage(db, report.requestId, "guardian", guardianNotice(report));
   });
 }
 

@@ -50,7 +50,7 @@ export default function ChatMenu() {
         req: r,
         name: isMentor ? `${r.studentName} 학생` : `${mentor?.name ?? "멘토"} 멘토`,
         seed: isMentor ? r.studentName : `${mentor?.id ?? ""}${mentor?.name ?? ""}`,
-        preview: last ? `${last.senderId === currentUser.id ? "나: " : ""}${last.text}` : "첫 메시지를 보내 인사해 보세요.",
+        preview: last ? `${last.system ? "운영팀: " : last.senderId === currentUser.id ? "나: " : ""}${last.text}` : "첫 메시지를 보내 인사해 보세요.",
         at: last?.createdAt ?? r.createdAt,
         unread: unreadCount(db, r, currentUser.id),
       };

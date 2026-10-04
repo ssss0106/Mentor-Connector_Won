@@ -790,3 +790,12 @@ button.chat-bubble:focus-visible { outline: 2px solid var(--primary); outline-of
 .excellent-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; padding: 12px 14px; border-radius: 12px; background: #f7f8fc; border: 1px solid var(--border); }
 .excellent-row.on { background: #fff8e6; border-color: #f6dd9c; }
 .excellent-row .small { margin-top: 2px; }
+
+/* ---------- 채팅: 운영팀 자동 안내 · 채팅 제한 · 운영 시간 ---------- */
+.chat-system { align-self: center; max-width: 92%; display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+.chat-system-text { background: #fff7e8; border: 1px solid #f6dd9c; color: #6b4a00; border-radius: 12px; padding: 10px 14px; font-size: 13.5px; line-height: 1.6; white-space: pre-wrap; }
+.chat-system-lock .chat-system-text { background: #fff1f0; border-color: #f5c2c0; color: #b42318; }
+.chat-system-unlock .chat-system-text { background: #eef8f1; border-color: #bfe5cc; color: #1f6a35; }
+.quiet-notice { background: #f1f2fb; border-color: #d9dcf5; color: #3f4380; }
+.chat-lock-status { margin-top: 10px; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13.5px; padding: 10px 14px; border-radius: 10px; background: #f7f8fc; }
+.chat-lock-status.locked { background: #fff1f0; color: #b42318; }

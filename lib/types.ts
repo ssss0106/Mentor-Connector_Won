@@ -158,6 +158,7 @@ export interface ChatMessage {
   text: string;
   createdAt: string;
   reactions?: Record<string, string>; // User id → 남긴 감정 이모지 (한 사람당 하나)
+  system?: "guardian" | "lock" | "unlock"; // 운영팀이 자동으로 보낸 안내 (senderId는 "system")
 }
 
 // 마이페이지 문의하기: 운영자에게 묻는 "문의"와 멘토링 피해를 알리는 "신고"
