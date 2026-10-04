@@ -249,7 +249,15 @@ function GuardianStatus({ report }: { report: SafetyReport }) {
           </span>
         )}
         {!open && (
-          <button className={`btn btn-sm ${last ? "btn-ghost" : ""}`} onClick={() => setOpen(true)}>
+          <button
+            className={`btn btn-sm ${last ? "btn-ghost" : ""}`}
+            onClick={() => {
+              // 처음 화면을 그릴 때는 (시연방 데이터가 늦게 오면) 번호가 비어 있을 수 있어서, 여는 순간 최신 번호로 채운다
+              setPhone(last?.phone ?? target?.phone ?? "");
+              setMessage(guardianMessage(report));
+              setOpen(true);
+            }}
+          >
             {last ? "다시 보내기" : "보호자에게 직접 보내기"}
           </button>
         )}
@@ -257,6 +265,7 @@ function GuardianStatus({ report }: { report: SafetyReport }) {
       {open && (
         <div className="reject-box">
           <input className="input" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="보호자 휴대폰 번호 (010-1234-5678)" aria-label="보호자 휴대폰 번호" />
+          {!phoneOk && <div className="field-error">{phone.trim() ? "휴대폰 번호 형식으로 입력해 주세요." : "보낼 보호자 휴대폰 번호를 입력해 주세요."}</div>}
           <textarea className="textarea" value={message} onChange={(e) => setMessage(e.target.value)} aria-label="보낼 문자 내용" />
           <div className="req-actions">
             <button className="btn btn-sm btn-ghost" onClick={() => setOpen(false)}>취소</button>
