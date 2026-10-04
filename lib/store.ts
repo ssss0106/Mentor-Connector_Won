@@ -415,8 +415,13 @@ export function consentOf(db: Pick<DB, "recordingConsents">, req: MentoringReque
   return req.recordingConsent?.[role];
 }
 
+// 시간 제한 스위치: 기능 테스트 중에는 false로 두어 시간 제한을 모두 끈다.
+// true로 바꾸면 ① 채팅 운영 시간(오후 10시~오전 8시 채팅 불가) ② 화상 멘토링 입장·완료 처리는 멘토링 당일부터, 두 제한이 다시 켜진다.
+export const TIME_LIMITS_ENABLED = false;
+
 // 멘토링 당일이 되었는지 (화상 입장과 완료 처리는 멘토링 날짜부터 할 수 있다)
 export function sessionDayReached(req: Pick<MentoringRequest, "date">, now = new Date()) {
+  if (!TIME_LIMITS_ENABLED) return true;
   return dateKey(now) >= req.date;
 }
 
@@ -513,6 +518,7 @@ export function unlockChat(requestId: string) {
 // 멘토·학생 채팅 운영 시간: 오전 8시 ~ 오후 10시
 export const QUIET_NOTICE = "현재는 멘토링 운영 시간이 아닙니다. 내일 아침 8시부터 채팅이 가능합니다.";
 export function isQuietHours(now = new Date()) {
+  if (!TIME_LIMITS_ENABLED) return false;
   const h = now.getHours();
   return h >= 22 || h < 8;
 }
