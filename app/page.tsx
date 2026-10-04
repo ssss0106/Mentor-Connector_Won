@@ -4,7 +4,6 @@ import Link from "next/link";
 import Avatar from "@/components/Avatar";
 import LandingAnswers from "@/components/LandingAnswers";
 import LandingFaq from "@/components/LandingFaq";
-import LandingProcess from "@/components/LandingProcess";
 import { SEED_MENTORS, SESSION_PRICE, formatPrice } from "@/lib/data";
 import { scoreMentor } from "@/lib/match";
 import { SESSION_MINUTES } from "@/lib/schedule";
@@ -232,9 +231,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* 신청부터 완료까지 진행 과정 */}
-      <LandingProcess />
 
       {/* 마무리 */}
       <section className="lp-cta">

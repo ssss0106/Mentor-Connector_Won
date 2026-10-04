@@ -737,29 +737,46 @@ button.chat-bubble:focus-visible { outline: 2px solid var(--primary); outline-of
   .faq-q { padding: 10px 2px; font-size: 14px; }
 }
 
-/* ---------- 랜딩: 신청부터 완료까지 진행 과정 ---------- */
-.process { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; position: relative; }
-.process::before { content: ""; position: absolute; top: 24px; left: 8%; right: 8%; height: 2px; background: linear-gradient(90deg, var(--primary-soft), var(--primary), var(--primary-soft)); }
-.process-step { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 12px; }
-.process-num {
-  position: relative; z-index: 1; width: 48px; height: 48px; border-radius: 50%; background: var(--primary); color: #fff;
-  font-weight: 800; font-size: 18px; display: grid; place-items: center; box-shadow: 0 0 0 6px #fff, 0 8px 18px rgba(91, 91, 240, 0.28);
+/* ---------- 헤더: 진행절차 (마우스를 올리면 4단계가 펼쳐짐) ---------- */
+.process-menu { position: relative; }
+.process-trigger {
+  background: none; border: none; font: inherit; font-size: 15px; font-weight: 700; color: var(--text); cursor: pointer;
+  padding: 8px 4px; display: inline-flex; align-items: center; gap: 4px;
 }
-.process-body { display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.process-body h3 { font-size: 16px; margin: 2px 0 0; }
-.process-body p { margin: 0; font-size: 13px; color: var(--muted); line-height: 1.55; }
+.process-trigger::after { content: "▾"; font-size: 11px; color: var(--muted); transition: transform .15s; }
+.process-menu:hover .process-trigger, .process-menu:focus-within .process-trigger { color: var(--primary); }
+.process-menu:hover .process-trigger::after, .process-menu:focus-within .process-trigger::after { transform: rotate(180deg); }
+.process-pop {
+  display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-38%); width: 720px; z-index: 20;
+  background: #fff; border: 1px solid var(--border); border-radius: 18px; padding: 22px 24px 20px;
+  box-shadow: 0 18px 44px rgba(40, 40, 110, 0.16);
+}
+/* 마우스가 글자에서 팝업으로 넘어가는 사이에 닫히지 않도록 위쪽 빈틈을 메운다 */
+.process-pop::before { content: ""; position: absolute; top: -12px; left: 0; right: 0; height: 12px; }
+.process-menu:hover .process-pop, .process-menu:focus-within .process-pop { display: block; }
+.process-pop-title { display: block; text-align: center; font-size: 15px; margin-bottom: 18px; }
+.process { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; position: relative; }
+.process::before { content: ""; position: absolute; top: 20px; left: 12%; right: 12%; height: 2px; background: linear-gradient(90deg, var(--primary-soft), var(--primary), var(--primary-soft)); }
+.process-step { position: relative; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; }
+.process-num {
+  position: relative; z-index: 1; width: 40px; height: 40px; border-radius: 50%; background: var(--primary); color: #fff;
+  font-weight: 800; font-size: 16px; display: grid; place-items: center; box-shadow: 0 0 0 5px #fff, 0 6px 14px rgba(91, 91, 240, 0.28);
+}
+.process-body { display: flex; flex-direction: column; align-items: center; gap: 3px; }
+.process-body h3 { font-size: 14.5px; margin: 2px 0 0; }
+.process-body p { margin: 0; font-size: 12.5px; color: var(--muted); line-height: 1.5; }
 .process-who { font-size: 11px; font-weight: 800; padding: 2px 8px; border-radius: 999px; }
 .who-student { background: #eef0ff; color: var(--primary); }
 .who-mentor { background: #fff1e6; color: #c25a12; }
 .who-both { background: #e7f6ec; color: #1f7a3a; }
-.process-extra { margin-top: 32px; display: flex; flex-direction: column; gap: 8px; align-items: center; font-size: 14px; color: #4a4e63; text-align: center; }
-.process-extra strong { color: var(--text); }
 @media (max-width: 900px) {
-  .process { grid-template-columns: 1fr; gap: 0; max-width: 460px; margin: 0 auto; }
-  .process::before { top: 24px; bottom: 24px; left: 23px; right: auto; width: 2px; height: auto; background: var(--primary-soft); }
-  .process-step { flex-direction: row; align-items: flex-start; text-align: left; gap: 16px; padding-bottom: 20px; }
-  .process-body { align-items: flex-start; padding-top: 4px; }
-  .process-extra { align-items: flex-start; text-align: left; }
+  .process-menu { position: static; }
+  .process-trigger { font-size: 13px; }
+  .process-pop { position: fixed; top: 64px; left: 12px; right: 12px; width: auto; transform: none; padding: 18px; }
+  .process { grid-template-columns: 1fr; gap: 0; }
+  .process::before { top: 20px; bottom: 20px; left: 19px; right: auto; width: 2px; height: auto; background: var(--primary-soft); }
+  .process-step { flex-direction: row; align-items: flex-start; text-align: left; gap: 14px; padding-bottom: 14px; }
+  .process-body { align-items: flex-start; padding-top: 2px; }
 }
 
 /* ---------- 우수 멘토 ---------- */
