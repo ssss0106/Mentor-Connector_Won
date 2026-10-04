@@ -222,27 +222,80 @@ export function reviewEnrollment(mentorId: string, approve: boolean, rejectReaso
 // 멘토가 승인한 뒤부터 채팅할 수 있다
 export const canChat = (req: MentoringRequest) => req.status !== "pending" && req.status !== "cancelled";
 
-export function sendMessage(requestId: string, sender: User, text: string) {
+// 같은 학생과 멘토 사이의 대화는 멘토링을 여러 번 해도 하나의 채팅방에 모인다.
+// 메시지는 보낼 때 진행 중인 신청 id를 함께 저장하고(안전 알림용), 화면에서는 두 사람의 모든 신청을 묶어서 보여 준다.
+type Pair = Pick<MentoringRequest, "studentId" | "mentorId">;
+export const roomKey = (r: Pair) => `${r.studentId}~${r.mentorId}`;
+
+export function roomRequests(db: Pick<DB, "requests">, r: Pair): MentoringRequest[] {
+  return db.requests
+    .filter((x) => x.studentId === r.studentId && x.mentorId === r.mentorId)
+    .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+}
+
+export function roomMessages(db: Pick<DB, "requests" | "messages">, r: Pair): ChatMessage[] {
+  const ids = new Set(roomRequests(db, r).map((x) => x.id));
+  return db.messages.filter((m) => ids.has(m.requestId));
+}
+
+// 채팅을 이어 갈 신청: 가장 최근에 승인된(취소되지 않은) 신청
+export function roomActiveRequest(db: Pick<DB, "requests">, r: Pair): MentoringRequest | undefined {
+  return roomRequests(db, r).filter(canChat).at(-1);
+}
+
+// 마지막으로 읽은 시각 (예전에 신청별로 저장한 기록도 함께 본다)
+function readSince(db: Pick<DB, "requests" | "lastRead">, userId: string, r: Pair): string {
+  const keys = [`${userId}:room:${roomKey(r)}`, ...roomRequests(db, r).map((x) => `${userId}:${x.id}`)];
+  return keys.reduce((max, k) => ((db.lastRead[k] ?? "") > max ? db.lastRead[k] : max), "");
+}
+
+export function sendMessage(pair: Pair, sender: User, text: string): MentoringRequest | undefined {
   const now = new Date().toISOString();
+  let target: MentoringRequest | undefined;
   update((db) => {
-    db.messages.push({ id: uid("c"), requestId, senderId: sender.id, senderName: sender.name, text, createdAt: now });
-    db.lastRead[`${sender.id}:${requestId}`] = now;
+    target = roomActiveRequest(db, pair);
+    if (!target) return;
+    db.messages.push({ id: uid("c"), requestId: target.id, senderId: sender.id, senderName: sender.name, text, createdAt: now });
+    db.lastRead[`${sender.id}:room:${roomKey(pair)}`] = now;
   });
+  return target;
 }
 
-export function markChatRead(requestId: string, userId: string) {
-  const key = `${userId}:${requestId}`;
+export function markChatRead(pair: Pair, userId: string) {
   const db = load();
-  const last = db.messages.filter((m) => m.requestId === requestId).at(-1);
-  if (!last || (db.lastRead[key] ?? "") >= last.createdAt) return;
+  const last = roomMessages(db, pair).at(-1);
+  if (!last || readSince(db, userId, pair) >= last.createdAt) return;
   update((d) => {
-    d.lastRead[key] = new Date().toISOString();
+    d.lastRead[`${userId}:room:${roomKey(pair)}`] = new Date().toISOString();
   });
 }
 
-export function unreadCount(db: Pick<DB, "messages" | "lastRead">, requestId: string, userId: string): number {
-  const since = db.lastRead[`${userId}:${requestId}`] ?? "";
-  return db.messages.filter((m) => m.requestId === requestId && m.senderId !== userId && m.createdAt > since).length;
+export function unreadCount(db: Pick<DB, "messages" | "lastRead" | "requests">, pair: Pair, userId: string): number {
+  const since = readSince(db, userId, pair);
+  return roomMessages(db, pair).filter((m) => m.senderId !== userId && m.createdAt > since).length;
+}
+
+// 상대방이 이 채팅방을 마지막으로 읽은 시각 (카카오톡의 "1"처럼 읽음 여부를 보여 줄 때 쓴다)
+export function otherReadAt(db: Pick<DB, "messages" | "lastRead" | "requests" | "users">, pair: Pair, me: User): string {
+  const others = me.role === "mentor" ? [pair.studentId] : db.users.filter((u) => u.mentorId === pair.mentorId).map((u) => u.id);
+  return others.reduce((max, id) => {
+    const t = readSince(db, id, pair);
+    return t > max ? t : max;
+  }, "");
+}
+
+// 메시지에 감정 남기기: 같은 감정을 다시 누르면 취소하고, 다른 감정을 누르면 바꾼다
+export const REACTIONS = ["😍", "😆", "👍", "😮", "😢", "😡", "👌"];
+
+export function reactMessage(messageId: string, userId: string, emoji: string) {
+  update((db) => {
+    const m = db.messages.find((x) => x.id === messageId);
+    if (!m) return;
+    const next = { ...m.reactions };
+    if (next[userId] === emoji) delete next[userId];
+    else next[userId] = emoji;
+    m.reactions = next;
+  });
 }
 
 // ---------- 멘토링 신청 ----------
