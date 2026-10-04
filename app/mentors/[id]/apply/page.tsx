@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { METHODS, SESSION_PRICE, formatPrice } from "@/lib/data";
 import { SESSION_MINUTES, endTime, formatSession, upcomingSlots } from "@/lib/schedule";
-import { createRequest, useStore } from "@/lib/store";
+import { canStudentModify, changeRequest, createRequest, useStore } from "@/lib/store";
 
 export default function ApplyPage() {
   const { id } = useParams<{ id: string }>();
@@ -18,13 +18,25 @@ export default function ApplyPage() {
   const [time, setTime] = useState(""); // "19:00"
   const [method, setMethod] = useState(METHODS[0]);
   const [message, setMessage] = useState("");
-  // ?from=신청id → 같은 멘토와 이어서 멘토링, ?offer=제안id → 멘토의 제안을 받아 신청
-  const [query, setQuery] = useState<{ from?: string; offer?: string }>({});
+  // ?from=신청id → 같은 멘토와 이어서 멘토링, ?offer=제안id → 멘토의 제안을 받아 신청, ?change=신청id → 신청 변경
+  const [query, setQuery] = useState<{ from?: string; offer?: string; change?: string }>({});
 
   useEffect(() => {
     const sp = new URLSearchParams(window.location.search);
-    setQuery({ from: sp.get("from") ?? undefined, offer: sp.get("offer") ?? undefined });
+    setQuery({ from: sp.get("from") ?? undefined, offer: sp.get("offer") ?? undefined, change: sp.get("change") ?? undefined });
   }, []);
+
+  const editing = requests.find((r) => r.id === query.change && r.studentId === currentUser?.id && r.mentorId === id);
+  const editable = !!editing && canStudentModify(editing);
+
+  // 바꾸려는 신청의 기존 내용을 채워 둔다
+  useEffect(() => {
+    if (!editing) return;
+    setDate(editing.date);
+    setTime(editing.time);
+    setMethod(editing.method);
+    setMessage(editing.message);
+  }, [editing?.id]);
 
   const prev = requests.find((r) => r.id === query.from && r.studentId === currentUser?.id && r.mentorId === id && r.status === "completed");
   const offer = offers.find((o) => o.id === query.offer && o.studentId === currentUser?.id && o.mentorId === id && o.status === "pending");
@@ -35,18 +47,23 @@ export default function ApplyPage() {
 
   // 고민 입력 내용(이어서 하는 멘토링이면 지난 멘토링 이야기)을 신청서에 미리 채워준다
   useEffect(() => {
-    if (message) return;
+    if (message || query.change) return;
     if (prev) setMessage(`지난 ${formatSession(prev.date, prev.time)} 멘토링에 이어서 이야기하고 싶어요.\n`);
     else if (myProfile) setMessage(myProfile.concern);
-  }, [myProfile, prev?.id]);
+  }, [myProfile, prev?.id, query.change]);
 
   // 앞으로 2주 동안 멘토 시간표에 맞는 실제 시간
   const days = useMemo(() => (mentor ? upcomingSlots(mentor.slots ?? []) : []), [mentor?.id, mentor?.slots?.length]);
 
-  // 이미 다른 신청이 잡힌 시간은 선택할 수 없다
+  // 이미 다른 신청이 잡힌 시간은 선택할 수 없다 (취소된 신청과 지금 바꾸는 신청은 제외)
   const booked = useMemo(
-    () => new Set(requests.filter((r) => r.mentorId === id).map((r) => `${r.date} ${r.time}`)),
-    [requests, id],
+    () =>
+      new Set(
+        requests
+          .filter((r) => r.mentorId === id && r.status !== "cancelled" && r.id !== query.change)
+          .map((r) => `${r.date} ${r.time}`),
+      ),
+    [requests, id, query.change],
   );
 
   // 첫 번째로 예약 가능한 날짜를 기본 선택
@@ -56,7 +73,29 @@ export default function ApplyPage() {
     if (first) setDate(first.date);
   }, [days, booked, date]);
 
-  if (!ready || !currentUser || !mentor) return null;
+  if (!ready || !currentUser) return null;
+  if (!mentor) {
+    return (
+      <div className="container page empty">
+        지금은 이 멘토에게 신청할 수 없어요. <Link href="/mentors">다른 멘토 보기</Link>
+      </div>
+    );
+  }
+  // 안전 알림을 보호자에게 보낼 수 있도록, 보호자 연락처를 등록해야 신청할 수 있다
+  if (!myProfile?.guardianPhone) {
+    return (
+      <div className="container page empty">
+        멘토링을 신청하려면 먼저 고민과 보호자 연락처를 입력해 주세요. <Link href="/concern">고민 입력하기</Link>
+      </div>
+    );
+  }
+  if (query.change && !editable) {
+    return (
+      <div className="container page empty">
+        이미 시작했거나 끝난 멘토링이라 바꿀 수 없어요. <Link href="/mypage">마이페이지로</Link>
+      </div>
+    );
+  }
 
   const selectedDay = days.find((d) => d.date === date);
   const valid = date && time && message.trim();
@@ -67,6 +106,12 @@ export default function ApplyPage() {
     if (booked.has(`${date} ${time}`)) {
       alert("방금 다른 신청이 들어온 시간이에요. 다른 시간을 선택해 주세요.");
       setTime("");
+      return;
+    }
+    if (editing) {
+      changeRequest(editing.id, { date, time, method, message: message.trim() });
+      alert(`${formatSession(date, time)}(으)로 신청을 바꿨어요. 멘토가 다시 확인하면 확정돼요.`);
+      router.push("/mypage");
       return;
     }
     createRequest({
@@ -87,11 +132,17 @@ export default function ApplyPage() {
 
   return (
     <div className="container narrow page">
-      <h1 className="page-title">{prev ? "이어서 멘토링 신청" : "멘토링 신청"}</h1>
+      <h1 className="page-title">{editing ? "신청 변경" : prev ? "이어서 멘토링 신청" : "멘토링 신청"}</h1>
       <p className="page-sub">
         {mentor.name} 멘토 · {mentor.university} {mentor.major}
       </p>
 
+      {editing && (
+        <div className="card apply-context">
+          <strong>✏️ 지금 신청: {formatSession(editing.date, editing.time)} · {editing.method}</strong>
+          <span className="muted">날짜·시간·방식·내용을 바꾸면 멘토가 다시 확인한 뒤 확정돼요.</span>
+        </div>
+      )}
       {prev && (
         <div className="card apply-context">
           <strong>🔁 {mentor.name} 멘토와 이어서 멘토링해요</strong>
@@ -189,7 +240,11 @@ export default function ApplyPage() {
         </div>
 
         <button className="btn btn-block" disabled={!valid}>
-          {date && time ? `${formatSession(date, time)} · ${formatPrice(SESSION_PRICE)} 신청하기` : "날짜와 시간을 선택해 주세요"}
+          {!(date && time)
+            ? "날짜와 시간을 선택해 주세요"
+            : editing
+              ? `${formatSession(date, time)}(으)로 변경하기`
+              : `${formatSession(date, time)} · ${formatPrice(SESSION_PRICE)} 신청하기`}
         </button>
       </form>
     </div>

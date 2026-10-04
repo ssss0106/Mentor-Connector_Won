@@ -243,6 +243,7 @@ main { min-height: calc(100vh - 140px); }
 .badge-approved { background: #e0f2ff; color: #0b6aa8; }
 .badge-scheduled { background: var(--primary-soft); color: var(--primary); }
 .badge-completed { background: #e3f6e8; color: #1f7a3a; }
+.badge-cancelled { background: #f0f1f4; color: #7a7f93; }
 
 /* ---------- 멘토 경력 조회 확인 ---------- */
 .verify-not_submitted { background: #f0f1f6; color: var(--muted); }
@@ -682,3 +683,12 @@ main { min-height: calc(100vh - 140px); }
 @media (max-width: 760px) {
   .mentee-grid { grid-template-columns: 1fr; }
 }
+
+/* ---------- 화상 멘토링 입장 전 녹음 동의 ---------- */
+.room-entry { margin-top: 12px; padding: 12px 14px; border-radius: 10px; background: #f6f7fd; display: flex; flex-direction: column; gap: 10px; }
+.room-entry .check { font-size: 13px; line-height: 1.5; }
+.room-entry-row { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.btn-video:disabled { opacity: .45; cursor: not-allowed; }
+.rec-auto { font-size: 13px; color: var(--muted); margin: 0; }
+.room-consent { display: flex; flex-direction: column; gap: 10px; }
+.room-consent .page-title { margin: 0; }

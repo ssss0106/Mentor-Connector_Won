@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import SummaryView from "@/components/SummaryView";
 import { addReport, saveSummary } from "@/lib/store";
 import type { LectureSummary } from "@/lib/types";
@@ -24,17 +24,26 @@ interface Props {
   mentorName: string;
   studentName: string;
   sessionLabel: string; // 운영자 알림에 쓰는 세션 설명 (학생 이름은 넣지 않는다)
+  autoStart: boolean; // 입장 전에 녹음에 동의했고 멘토링이 시작되면 true → 자동으로 녹음 시작
 }
 
-export default function LectureRecorder({ requestId, summary, mentorId, mentorName, studentName, sessionLabel }: Props) {
+export interface LectureRecorderHandle {
+  // 녹음 중이면 멈추고 요약까지 마친 뒤 끝난다 (나가기 전에 호출)
+  finish: () => Promise<void>;
+}
+
+const LectureRecorder = forwardRef<LectureRecorderHandle, Props>(function LectureRecorder(
+  { requestId, summary, mentorId, mentorName, studentName, sessionLabel, autoStart },
+  ref,
+) {
   const [phase, setPhase] = useState<Phase>("idle");
-  const [agree, setAgree] = useState(false);
   const [seconds, setSeconds] = useState(0);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState<{ severity: string; types: string[] } | null>(null);
   const recRef = useRef<MediaRecorder | null>(null);
   const chunks = useRef<Blob[]>([]);
-  const unmounted = useRef(false);
+  const autoStarted = useRef(false);
+  const done = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (phase !== "recording") return;
@@ -46,17 +55,39 @@ export default function LectureRecorder({ requestId, summary, mentorId, mentorNa
     if (phase === "recording" && seconds >= MAX_SECONDS) recRef.current?.stop();
   }, [phase, seconds]);
 
-  // 화면을 벗어나면 녹음을 멈추고 마이크를 끈다 (이 경우 요약은 만들지 않는다)
+  // 화면을 벗어나도 녹음을 멈추고 마이크를 끈 뒤, 녹음된 내용은 요약해서 저장한다
   useEffect(() => {
-    unmounted.current = false;
     return () => {
-      unmounted.current = true;
       if (recRef.current?.state === "recording") recRef.current.stop();
     };
   }, []);
 
+  // 멘토링이 시작되면 자동으로 녹음한다 (이미 요약이 있으면 다시 녹음하지 않는다)
+  useEffect(() => {
+    if (!autoStart || autoStarted.current || summary) return;
+    autoStarted.current = true;
+    void start();
+  }, [autoStart]);
+
+  useImperativeHandle(ref, () => ({
+    finish: () =>
+      new Promise<void>((resolve) => {
+        if (recRef.current?.state !== "recording") return resolve();
+        done.current = resolve;
+        recRef.current.stop();
+      }),
+  }));
+
   const upload = async (blob: Blob) => {
-    if (unmounted.current) return;
+    try {
+      await summarize(blob);
+    } finally {
+      done.current?.();
+      done.current = null;
+    }
+  };
+
+  const summarize = async (blob: Blob) => {
     if (blob.size < 2000) {
       setError("녹음된 내용이 거의 없어요. 다시 시도해 주세요.");
       setPhase("idle");
@@ -120,17 +151,17 @@ export default function LectureRecorder({ requestId, summary, mentorId, mentorNa
       {phase === "idle" && (
         <>
           <p className="rec-help">
-            {summary ? "다시 녹음하면 새 요약으로 바뀌어요." : "수업 내용을 녹음하면 AI가 요약본을 만들어 줘요."}
+            {!autoStart && !summary
+              ? "멘토링이 시작되면 자동으로 녹음이 시작돼요."
+              : summary
+                ? "다시 녹음하면 새 요약으로 바뀌어요."
+                : "녹음이 멈춰 있어요. 아래 버튼으로 다시 시작할 수 있어요."}
           </p>
-          <label className="check rec-consent">
-            <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
-            <span>
-              녹음과 AI 요약에 멘토·학생 모두 동의했어요. 음성은 요약을 만들 때만 OpenAI 서버로 보내지고, 음성 파일과 받아쓴 원문은 저장하지 않아요. 다만 비속어·괴롭힘·위험한 표현이 감지되면 그 발언의 일부와 사유가 운영자에게 전달될 수 있어요.
-            </span>
-          </label>
-          <button className="btn btn-sm rec-btn" disabled={!agree} onClick={start}>
-            ⏺ 녹음 시작
-          </button>
+          {(autoStart || summary) && (
+            <button className="btn btn-sm rec-btn" onClick={start}>
+              ⏺ {summary ? "다시 녹음" : "녹음 시작"}
+            </button>
+          )}
         </>
       )}
 
@@ -161,7 +192,9 @@ export default function LectureRecorder({ requestId, summary, mentorId, mentorNa
       )}
 
       {error && <div className="cam-error">{error}</div>}
-      <p className="demo-note">이 기기의 마이크로 들리는 소리만 녹음돼요.</p>
+      <p className="demo-note">입장 전에 동의한 대로 녹음돼요. 음성 파일과 받아쓴 원문은 저장하지 않아요.</p>
     </div>
   );
-}
+});
+
+export default LectureRecorder;

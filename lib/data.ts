@@ -65,6 +65,7 @@ export const STATUS_LABEL: Record<RequestStatus, string> = {
   approved: "멘토 승인",
   scheduled: "멘토링 예정",
   completed: "완료",
+  cancelled: "취소됨",
 };
 
 export const ENROLLMENT_LABEL: Record<VerificationStatus, string> = {
