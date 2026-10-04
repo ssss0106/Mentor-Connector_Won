@@ -692,3 +692,32 @@ main { min-height: calc(100vh - 140px); }
 .rec-auto { font-size: 13px; color: var(--muted); margin: 0; }
 .room-consent { display: flex; flex-direction: column; gap: 10px; }
 .room-consent .page-title { margin: 0; }
+
+/* ---------- 채팅: 하나로 묶인 채팅방 · 감정 남기기 · 읽음 표시 ---------- */
+button.chat-bubble { font: inherit; text-align: left; cursor: pointer; color: inherit; border: none; }
+.them button.chat-bubble { border: 1px solid var(--border); }
+.me button.chat-bubble { color: #fff; }
+button.chat-bubble:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.chat-bubble-row { position: relative; display: flex; align-items: flex-end; gap: 6px; max-width: 100%; }
+.chat-unread-one { font-size: 12px; font-weight: 800; color: #e6a700; line-height: 1; padding-bottom: 4px; }
+.chat-read { color: var(--primary); }
+.chat-picker {
+  position: absolute; bottom: calc(100% + 6px); z-index: 5; display: flex; gap: 2px; padding: 6px 8px;
+  background: #fff; border-radius: 999px; box-shadow: 0 8px 24px rgba(20, 22, 40, .16); border: 1px solid var(--border);
+}
+.them .chat-picker { left: 0; }
+.me .chat-picker { right: 0; }
+.chat-picker button { font-size: 26px; line-height: 1; background: none; border: none; cursor: pointer; padding: 4px; border-radius: 50%; transition: transform .12s; }
+.chat-picker button:hover { transform: scale(1.25); }
+.chat-picker button.on { background: var(--primary-soft); }
+.chat-reactions { display: flex; flex-wrap: wrap; gap: 4px; margin-top: -2px; }
+.chat-reaction { display: inline-flex; align-items: center; gap: 2px; font-size: 15px; padding: 2px 8px; border-radius: 999px; background: #fff; border: 1px solid var(--border); cursor: default; }
+.chat-reaction.mine { border-color: var(--primary); background: var(--primary-soft); cursor: pointer; }
+.chat-reaction span { font-size: 12px; font-weight: 700; color: var(--muted); }
+.chat-session { display: flex; flex-direction: column; gap: 14px; }
+.chat-divider { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 12px; font-weight: 700; }
+.chat-divider::before, .chat-divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+.chat-hint { text-align: center; margin: 0; }
+@media (max-width: 760px) {
+  .chat-picker button { font-size: 22px; padding: 3px; }
+}

@@ -5,7 +5,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Avatar from "./Avatar";
-import { canChat, mentorUnreadFromAdmin, unreadCount, useStore } from "@/lib/store";
+import { canChat, mentorUnreadFromAdmin, roomActiveRequest, roomKey, roomMessages, unreadCount, useStore } from "@/lib/store";
 
 const timeLabel = (iso: string) => {
   const d = new Date(iso);
@@ -38,19 +38,21 @@ export default function ChatMenu() {
   if (!currentUser) return null;
   const isMentor = currentUser.role === "mentor";
 
-  // 내가 참여한 채팅방 (멘토 승인 이후), 최근 대화 순
-  const rooms = requests
-    .filter((r) => canChat(r) && (isMentor ? r.mentorId === currentUser.mentorId : r.studentId === currentUser.id))
-    .map((r) => {
+  // 내가 참여한 채팅방 (멘토 승인 이후), 최근 대화 순. 같은 학생·멘토의 신청은 채팅방 하나로 묶는다.
+  const db = { requests, messages, lastRead };
+  const mine = requests.filter((r) => canChat(r) && (isMentor ? r.mentorId === currentUser.mentorId : r.studentId === currentUser.id));
+  const rooms = [...new Map(mine.map((r) => [roomKey(r), r])).values()]
+    .map((pair) => {
+      const r = roomActiveRequest(db, pair) ?? pair;
       const mentor = allMentors.find((m) => m.id === r.mentorId);
-      const last = messages.filter((m) => m.requestId === r.id).at(-1);
+      const last = roomMessages(db, r).at(-1);
       return {
         req: r,
         name: isMentor ? `${r.studentName} 학생` : `${mentor?.name ?? "멘토"} 멘토`,
         seed: isMentor ? r.studentName : `${mentor?.id ?? ""}${mentor?.name ?? ""}`,
         preview: last ? `${last.senderId === currentUser.id ? "나: " : ""}${last.text}` : "첫 메시지를 보내 인사해 보세요.",
         at: last?.createdAt ?? r.createdAt,
-        unread: unreadCount({ messages, lastRead }, r.id, currentUser.id),
+        unread: unreadCount(db, r, currentUser.id),
       };
     })
     .sort((a, b) => b.at.localeCompare(a.at));

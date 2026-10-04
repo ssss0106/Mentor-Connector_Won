@@ -9,7 +9,7 @@ import VerificationBadge from "@/components/VerificationBadge";
 import { STATUS_LABEL, categoryLabel, formatPrice } from "@/lib/data";
 import { formatSession } from "@/lib/schedule";
 import Avatar from "@/components/Avatar";
-import { activeSanction, agreeRecording, canChat, canStudentModify, cancelRequest, sessionStarted, maskPhone, mentorUnreadFromAdmin, resetAll, respondOffer, setRequestStatus, unreadCount, useStore } from "@/lib/store";
+import { activeSanction, agreeRecording, canChat, canStudentModify, cancelRequest, roomActiveRequest, sessionStarted, maskPhone, mentorUnreadFromAdmin, resetAll, respondOffer, setRequestStatus, unreadCount, useStore } from "@/lib/store";
 import type { Mentor, MentoringRequest, RequestStatus, VerificationStatus } from "@/lib/types";
 
 const FLOW: RequestStatus[] = ["pending", "approved", "scheduled", "completed"];
@@ -407,7 +407,7 @@ export default function MyPage() {
       ) : (
         <div className="req-list">
           {shown.map((r) => (
-            <RequestItem key={r.id} req={r} mentor={allMentors.find((m) => m.id === r.mentorId)} asMentor={isMentor} unread={unreadCount({ messages, lastRead }, r.id, currentUser.id)} reviewed={allReviews.some((v) => v.requestId === r.id)} locked={isMentor && !!sanction} />
+            <RequestItem key={r.id} req={r} mentor={allMentors.find((m) => m.id === r.mentorId)} asMentor={isMentor} unread={roomActiveRequest({ requests }, r)?.id === r.id ? unreadCount({ requests, messages, lastRead }, r, currentUser.id) : 0} reviewed={allReviews.some((v) => v.requestId === r.id)} locked={isMentor && !!sanction} />
           ))}
         </div>
       )}
