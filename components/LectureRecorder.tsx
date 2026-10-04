@@ -39,6 +39,7 @@ const LectureRecorder = forwardRef<LectureRecorderHandle, Props>(function Lectur
   const [phase, setPhase] = useState<Phase>("idle");
   const [seconds, setSeconds] = useState(0);
   const [error, setError] = useState("");
+  const [micError, setMicError] = useState(false);
   const [notice, setNotice] = useState<{ severity: string; types: string[] } | null>(null);
   const recRef = useRef<MediaRecorder | null>(null);
   const chunks = useRef<Blob[]>([]);
@@ -62,9 +63,9 @@ const LectureRecorder = forwardRef<LectureRecorderHandle, Props>(function Lectur
     };
   }, []);
 
-  // 멘토링이 시작되면 자동으로 녹음한다 (이미 요약이 있으면 다시 녹음하지 않는다)
+  // 멘토링이 시작되면 무조건 자동으로 녹음하고, 나가서 멘토링이 끝날 때까지 멈출 수 없다
   useEffect(() => {
-    if (!autoStart || autoStarted.current || summary) return;
+    if (!autoStart || autoStarted.current) return;
     autoStarted.current = true;
     void start();
   }, [autoStart]);
@@ -118,6 +119,7 @@ const LectureRecorder = forwardRef<LectureRecorderHandle, Props>(function Lectur
 
   const start = async () => {
     setError("");
+    setMicError(false);
     setNotice(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -138,6 +140,7 @@ const LectureRecorder = forwardRef<LectureRecorderHandle, Props>(function Lectur
       setSeconds(0);
       setPhase("recording");
     } catch {
+      setMicError(true);
       setError("마이크를 사용할 수 없어요. 브라우저의 마이크 권한을 확인해 주세요.");
     }
   };
@@ -151,15 +154,18 @@ const LectureRecorder = forwardRef<LectureRecorderHandle, Props>(function Lectur
       {phase === "idle" && (
         <>
           <p className="rec-help">
-            {!autoStart && !summary
+            {!autoStart
               ? "멘토링이 시작되면 자동으로 녹음이 시작돼요."
-              : summary
-                ? "다시 녹음하면 새 요약으로 바뀌어요."
-                : "녹음이 멈춰 있어요. 아래 버튼으로 다시 시작할 수 있어요."}
+              : micError
+                ? "녹음을 시작하지 못했어요. 마이크 권한을 허용한 뒤 다시 연결해 주세요."
+                : recRef.current
+                  ? "녹음이 끝났어요."
+                  : "녹음을 준비하고 있어요…"}
           </p>
-          {(autoStart || summary) && (
+          {/* 마이크 권한 문제로 녹음이 시작되지 않았을 때만 다시 연결할 수 있다 */}
+          {autoStart && micError && (
             <button className="btn btn-sm rec-btn" onClick={start}>
-              ⏺ {summary ? "다시 녹음" : "녹음 시작"}
+              🎤 녹음 다시 연결
             </button>
           )}
         </>
@@ -170,9 +176,7 @@ const LectureRecorder = forwardRef<LectureRecorderHandle, Props>(function Lectur
           <div className="rec-live">
             <span className="rec-dot" /> 녹음 중 {fmt(seconds)}
           </div>
-          <button className="btn btn-sm rec-btn" onClick={() => recRef.current?.stop()}>
-            ⏹ 녹음 끝내고 요약하기
-          </button>
+          <p className="rec-auto">멘토링이 끝나고 나가기를 누르면 녹음이 끝나고 AI가 요약을 만들어요.</p>
         </>
       )}
 

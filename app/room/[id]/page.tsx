@@ -84,7 +84,7 @@ export default function RoomPage() {
   const allowed =
     req && currentUser && (isMentor ? req.mentorId === currentUser.mentorId : req.studentId === currentUser.id);
 
-  if (!req || !mentor || !allowed || (req.status !== "scheduled" && req.status !== "completed")) {
+  if (!req || !mentor || !allowed || req.status !== "scheduled") {
     return (
       <div className="container page empty">
         입장할 수 없는 멘토링이에요. <Link href="/mypage">마이페이지로</Link>
