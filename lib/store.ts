@@ -35,9 +35,10 @@ interface DB {
   reactions: Record<string, string>; // "메시지id:사용자id" → 감정 이모지
   excellent: Record<string, boolean>; // 멘토 id → 우수 멘토 선정 여부 (기본 선정 멘토를 해제할 때 false)
   chatUnlocks: Record<string, string>; // 채팅방(roomKey) → 운영자가 채팅 제한을 푼 시각 (이후 안전 알림만 다시 센다)
+  rtc: Record<string, string>; // 화상 멘토링 연결 정보 ("신청id:hello|offer|answer|cam:역할" → 값). 영상 자체는 저장하지 않는다
 }
 
-const empty: DB = { users: [], currentUserId: null, profiles: [], mentors: [], requests: [], messages: [], reviews: [], reports: [], lastRead: {}, inquiries: [], sanctions: [], adminMessages: [], adminRead: {}, guardianAlerts: [], offers: [], recordingConsents: {}, reactions: {}, excellent: {}, chatUnlocks: {} };
+const empty: DB = { users: [], currentUserId: null, profiles: [], mentors: [], requests: [], messages: [], reviews: [], reports: [], lastRead: {}, inquiries: [], sanctions: [], adminMessages: [], adminRead: {}, guardianAlerts: [], offers: [], recordingConsents: {}, reactions: {}, excellent: {}, chatUnlocks: {}, rtc: {} };
 
 // 경력 조회 기능 이전에 저장된 멘토는 "서류 미제출" 상태로 본다
 function normalize(db: DB): DB {
@@ -718,6 +719,17 @@ export function resetAll() {
     .filter((k) => k.startsWith("mentor-connector:reasons:"))
     .forEach((k) => localStorage.removeItem(k));
   window.dispatchEvent(new Event(EVENT));
+}
+
+// ---------- 화상 멘토링 연결 정보 ----------
+
+// 두 사람의 브라우저가 서로 영상을 직접 주고받을 수 있도록 연결 정보(접속 신호)만 공유한다.
+// 시연방(Supabase)에서는 다른 컴퓨터끼리, 시연방이 아니면 같은 브라우저의 다른 탭끼리 연결된다.
+export function setRtc(key: string, value: string) {
+  update((db) => {
+    if ((db.rtc[key] ?? "") === value) return;
+    db.rtc[key] = value;
+  });
 }
 
 // ---------- React hook ----------

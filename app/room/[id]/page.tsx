@@ -1,13 +1,14 @@
 "use client";
 
-// 화상 멘토링 시연 화면. 실제 영상 연결은 하지 않고, 흐름만 보여준다.
-// 내 카메라는 사용자가 버튼을 눌렀을 때만 켠다 (영상은 이 기기 밖으로 전송되지 않음).
+// 화상 멘토링 화면. 멘토와 학생의 브라우저가 WebRTC로 영상·음성을 직접 주고받는다 (components/useVideoCall).
+// 내 카메라는 사용자가 버튼을 눌렀을 때만 켠다. 영상과 음성은 서버에 저장하지 않는다.
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import Avatar from "@/components/Avatar";
 import LectureRecorder, { type LectureRecorderHandle } from "@/components/LectureRecorder";
+import { useVideoCall } from "@/components/useVideoCall";
 import { SESSION_MINUTES, formatSession } from "@/lib/schedule";
 import { agreeRecording, consentOf, sessionDayReached, setRequestStatus, useStore } from "@/lib/store";
 
@@ -35,9 +36,50 @@ export default function RoomPage() {
   const recorderRef = useRef<LectureRecorderHandle>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const micRef = useRef<MediaStream | null>(null);
+  const remoteVideoRef = useRef<HTMLVideoElement>(null);
+  const remoteAudioRef = useRef<HTMLAudioElement>(null);
 
   const isMentor = currentUser?.role === "mentor";
   const consented = !!req && !!consentOf(store, req, isMentor ? "mentor" : "student");
+  const inRoom =
+    consented && !!currentUser && !!req && req.status === "scheduled" && (isMentor ? req.mentorId === currentUser.mentorId : req.studentId === currentUser.id);
+  const call = useVideoCall({ requestId: req?.id ?? "", role: isMentor ? "mentor" : "student", active: inRoom });
+  const { setLocalTrack } = call;
+
+  // 입장하면 마이크를 연결에 싣는다 (음소거는 트랙만 끈다)
+  useEffect(() => {
+    if (!inRoom) return;
+    let stopped = false;
+    navigator.mediaDevices
+      ?.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } })
+      .then((s) => {
+        if (stopped) return s.getTracks().forEach((t) => t.stop());
+        micRef.current = s;
+        setLocalTrack("audio", s.getAudioTracks()[0] ?? null);
+      })
+      .catch(() => {});
+    return () => {
+      stopped = true;
+      micRef.current?.getTracks().forEach((t) => t.stop());
+      micRef.current = null;
+    };
+  }, [inRoom, setLocalTrack]);
+
+  useEffect(() => {
+    micRef.current?.getAudioTracks().forEach((t) => (t.enabled = micOn));
+  }, [micOn]);
+
+  // 상대방 영상·음성 연결
+  useEffect(() => {
+    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = call.remoteStream;
+    if (remoteAudioRef.current) remoteAudioRef.current.srcObject = call.remoteStream;
+  }, [call.remoteStream, call.remoteCamOn, call.connected]);
+
+  // 상대방이 실제로 들어오면 바로 시작한다
+  useEffect(() => {
+    if (call.otherPresent) setJoined(true);
+  }, [call.otherPresent]);
 
   // 녹음에 동의하고 입장하면, 상대방이 3초 뒤 입장하는 것처럼 보여준다
   useEffect(() => {
@@ -55,6 +97,7 @@ export default function RoomPage() {
   const stopCamera = () => {
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
+    setLocalTrack("video", null);
   };
 
   useEffect(() => stopCamera, []);
@@ -68,6 +111,7 @@ export default function RoomPage() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
       streamRef.current = stream;
+      setLocalTrack("video", stream.getVideoTracks()[0] ?? null);
       setCamOn(true);
       setCamError("");
     } catch {
@@ -147,10 +191,24 @@ export default function RoomPage() {
       <div className="room-body">
         <div className="stage">
           <div className={`tile tile-main ${joined ? "speaking" : ""}`}>
-            {joined ? (
+            {/* 상대방 음성은 카메라와 상관없이 항상 들린다 */}
+            <audio ref={remoteAudioRef} autoPlay />
+            {call.connected && call.remoteCamOn ? (
+              <>
+                <video ref={remoteVideoRef} autoPlay playsInline muted className="remote-video" />
+                <span className="tile-name">{other.name}</span>
+              </>
+            ) : joined ? (
               <>
                 <Avatar seed={other.seed} size={140} />
                 <span className="tile-name">{other.name}</span>
+                <span className="call-status">
+                  {!call.otherPresent
+                    ? `${other.name}님이 아직 입장하지 않았어요`
+                    : !call.connected
+                      ? "영상 연결 중…"
+                      : "상대방 카메라가 꺼져 있어요"}
+                </span>
               </>
             ) : (
               <div className="waiting">

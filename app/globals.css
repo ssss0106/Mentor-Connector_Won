@@ -799,3 +799,7 @@ button.chat-bubble:focus-visible { outline: 2px solid var(--primary); outline-of
 .quiet-notice { background: #f1f2fb; border-color: #d9dcf5; color: #3f4380; }
 .chat-lock-status { margin-top: 10px; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13.5px; padding: 10px 14px; border-radius: 10px; background: #f7f8fc; }
 .chat-lock-status.locked { background: #fff1f0; color: #b42318; }
+
+/* ---------- 화상 멘토링: 상대방 영상 ---------- */
+.remote-video { width: 100%; height: 100%; object-fit: cover; position: absolute; inset: 0; background: #111; }
+.call-status { position: absolute; top: 14px; left: 50%; transform: translateX(-50%); background: rgba(0, 0, 0, 0.55); color: #fff; font-size: 13px; padding: 5px 12px; border-radius: 999px; white-space: nowrap; }
